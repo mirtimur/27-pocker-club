@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: pocker
+      POSTGRES_PASSWORD: pocker
+      POSTGRES_DB: pockerdb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  server:
+    build: ./server
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://pocker:pocker@db:5432/pockerdb
+      JWT_SECRET: devsecret
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+volumes:
+  db-data:
