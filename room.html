@@ -278,7 +278,7 @@
         document.getElementById('roomIdDisplay').textContent = roomId;
         
         // Формируем ссылку для приглашения
-        const shareLink = `${window.location.origin}/27-pocker-club/join.html?room=${roomId}`;
+        const shareLink = `${window.location.origin}/27-pocker-club/room.html?id=${roomId}`;
         document.getElementById('shareLinkInput').value = shareLink;
         
         // Обновление имени игрока в списке в реальном времени
@@ -338,11 +338,29 @@
         }
         
         // Проверяем, является ли пользователь хостом
-        const isHost = sessionStorage.getItem('isHost') === 'true';
+        let isHost = sessionStorage.getItem('isHost') === 'true';
+        
+        // Если isHost не установлен, значит пользователь перешел по ссылке напрямую
+        if (sessionStorage.getItem('isHost') === null) {
+            isHost = false;
+            sessionStorage.setItem('isHost', 'false');
+            sessionStorage.setItem('currentRoomId', roomId);
+        }
+        
         if (!isHost) {
             // Если не хост, скрываем настройки блайндов и отключаем starting chips
             document.getElementById('smallBlind').parentElement.style.display = 'none';
             document.getElementById('bigBlind').parentElement.style.display = 'none';
+            
+            // Загружаем имя если оно было сохранено
+            const savedName = sessionStorage.getItem('playerName');
+            if (savedName) {
+                document.getElementById('playerName').value = savedName;
+                playerNameDisplay.textContent = `${savedName} (You)`;
+                playerAvatar.textContent = savedName.charAt(0).toUpperCase();
+            } else {
+                document.getElementById('playerName').value = '';
+            }
         }
     </script>
 </body>
