@@ -33,8 +33,23 @@
         <button class="btn" onclick="startNewGame()">Start New Game</button>
     </div>
     <script>
+        function generateRoomId() {
+            // Генерация уникального ID комнаты (6 символов)
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let roomId = '';
+            for (let i = 0; i < 6; i++) {
+                roomId += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return roomId;
+        }
+
         function startNewGame() {
-            alert('Игра скоро начнется!');
+            const roomId = generateRoomId();
+            // Сохраняем ID комнаты в sessionStorage
+            sessionStorage.setItem('currentRoomId', roomId);
+            sessionStorage.setItem('isHost', 'true');
+            // Переходим на страницу настройки комнаты
+            window.location.href = `room.html?id=${roomId}`;
         }
     </script>
 </body>
