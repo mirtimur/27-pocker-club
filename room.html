@@ -278,7 +278,7 @@
         document.getElementById('roomIdDisplay').textContent = roomId;
         
         // Формируем ссылку для приглашения
-        const shareLink = `${window.location.origin}/join.html?room=${roomId}`;
+        const shareLink = `${window.location.origin}/27-pocker-club/join.html?room=${roomId}`;
         document.getElementById('shareLinkInput').value = shareLink;
         
         // Обновление имени игрока в списке в реальном времени
@@ -340,12 +340,9 @@
         // Проверяем, является ли пользователь хостом
         const isHost = sessionStorage.getItem('isHost') === 'true';
         if (!isHost) {
-            // Если не хост, отключаем настройки
-            document.querySelectorAll('.setting-item select, .setting-item input').forEach(el => {
-                if (el.id !== 'playerName') {
-                    el.disabled = true;
-                }
-            });
+            // Если не хост, скрываем настройки блайндов и отключаем starting chips
+            document.getElementById('smallBlind').parentElement.style.display = 'none';
+            document.getElementById('bigBlind').parentElement.style.display = 'none';
         }
     </script>
 </body>
