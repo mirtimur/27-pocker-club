@@ -9,12 +9,33 @@
         .card { text-align:center; }
         h1 { font-size:48px; letter-spacing:2px; margin:0 0 12px 0; }
         p { opacity:0.8 }
+        .btn { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: #fff; 
+            border: none; 
+            padding: 16px 48px; 
+            font-size: 18px; 
+            font-weight: 600; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin-top: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Welcome to 27 Pocker Club</h1>
-        <p>Online poker site coming soon.</p>
+        <button class="btn" onclick="startNewGame()">Start New Game</button>
     </div>
+    <script>
+        function startNewGame() {
+            alert('Игра скоро начнется!');
+        }
+    </script>
 </body>
 </html>
