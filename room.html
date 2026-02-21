@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Settings - 27 Poker Club</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -270,6 +275,36 @@
             window.location.href = 'index.html';
         }
         
+        // Firebase Configuration (временная для демо)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDemoKey-Replace-With-Your-Key",
+            authDomain: "poker-club-demo.firebaseapp.com",
+            databaseURL: "https://poker-club-demo-default-rtdb.firebaseio.com",
+            projectId: "poker-club-demo",
+            storageBucket: "poker-club-demo.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+        
+        // Инициализация Firebase
+        let database;
+        let useFirebase = false;
+        
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            database = firebase.database();
+            useFirebase = true;
+            console.log('Firebase connected');
+        } catch (error) {
+            console.log('Firebase not available, using local storage simulation');
+            useFirebase = false;
+        }
+        
+        // Генерация уникального ID для игрока
+        const playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
         // Отображаем ID комнаты
         document.getElementById('roomIdDisplay').textContent = roomId;
         
@@ -353,6 +388,97 @@
         // Первоначальная отрисовка игроков
         renderPlayers();
         
+        // Функция для добавления/обновления игрока в комнате
+        function addOrUpdatePlayer() {
+            const playerName = document.getElementById('playerName').value.trim() || 'Player';
+            const startingChips = parseInt(document.getElementById('startingChips').value) || 2000;
+            
+            const playerData = {
+                id: playerId,
+                name: playerName,
+                chips: startingChips,
+                isHost: isHost,
+                timestamp: Date.now()
+            };
+            
+            if (useFirebase) {
+                // Сохраняем в Firebase
+                database.ref(`rooms/${roomId}/players/${playerId}`).set(playerData);
+            } else {
+                // Сохраняем в localStorage
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{"players": {}}');
+                roomData.players = roomData.players || {};
+                roomData.players[playerId] = playerData;
+                localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+                loadPlayersFromStorage();
+            }
+        }
+        
+        // Функция для загрузки игроков из localStorage
+        function loadPlayersFromStorage() {
+            const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{"players": {}}');
+            const players = roomData.players || {};
+            renderAllPlayers(players);
+        }
+        
+        // Функция для отрисовки всех игроков
+        function renderAllPlayers(players) {
+            const playersContainer = document.getElementById('playersContainer');
+            playersContainer.innerHTML = '';
+            
+            const playersList = Object.values(players);
+            const playerCount = playersList.length;
+            
+            playersList.forEach(player => {
+                const playerItem = document.createElement('div');
+                playerItem.className = 'player-item';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'player-avatar';
+                avatar.textContent = player.name.charAt(0).toUpperCase();
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'player-name';
+                const isCurrentPlayer = player.id === playerId;
+                nameDiv.textContent = isCurrentPlayer ? `${player.name} (You)` : player.name;
+                
+                playerItem.appendChild(avatar);
+                playerItem.appendChild(nameDiv);
+                
+                if (player.isHost) {
+                    const hostBadge = document.createElement('div');
+                    hostBadge.className = 'player-host-badge';
+                    hostBadge.textContent = 'HOST';
+                    playerItem.appendChild(hostBadge);
+                }
+                
+                playersContainer.appendChild(playerItem);
+            });
+            
+            document.getElementById('playerCount').textContent = `(${playerCount}/10)`;
+        }
+        
+        // Слушаем изменения в Firebase
+        if (useFirebase) {
+            database.ref(`rooms/${roomId}/players`).on('value', (snapshot) => {
+                const players = snapshot.val() || {};
+                renderAllPlayers(players);
+            });
+        } else {
+            // Polling для localStorage (проверяем каждые 2 секунды)
+            setInterval(() => {
+                loadPlayersFromStorage();
+            }, 2000);
+        }
+        
+        // Добавляем игрока при загрузке страницы
+        addOrUpdatePlayer();
+        
+        // Обновляем данные игрока при изменении имени
+        playerNameInput.addEventListener('blur', () => {
+            addOrUpdatePlayer();
+        });
+        
         function copyRoomId() {
             navigator.clipboard.writeText(roomId).then(() => {
                 const btn = event.target;
@@ -395,34 +521,96 @@
         }
         
         function savePlayerData() {
+            const playerName = document.getElementById('playerName').value.trim();
+            
+            if (!playerName) {
+                alert('Please enter your name');
+                return;
+            }
+            
             const settings = {
                 roomId: roomId,
-                playerName: document.getElementById('playerName').value.trim(),
+                playerName: playerName,
                 startingChips: parseInt(document.getElementById('startingChips').value)
             };
             
             // Сохраняем настройки
             sessionStorage.setItem('playerSettings', JSON.stringify(settings));
             
+            // Обновляем данные игрока в комнате
+            addOrUpdatePlayer();
+            
             alert(`Your settings saved!\nName: ${settings.playerName}\nChips: ${settings.startingChips}\n\nWaiting for host to start the game...`);
         }
         
         function startGame() {
+            const playerName = document.getElementById('playerName').value.trim();
+            
+            if (!playerName) {
+                alert('Please enter your name');
+                return;
+            }
+            
             // Собираем настройки игры
             const settings = {
                 roomId: roomId,
-                playerName: document.getElementById('playerName').value || 'Player 1',
+                playerName: playerName,
                 startingChips: parseInt(document.getElementById('startingChips').value),
                 smallBlind: parseInt(document.getElementById('smallBlind').value),
                 bigBlind: parseInt(document.getElementById('bigBlind').value)
             };
             
+            // Сохраняем настройки комнаты в Firebase/localStorage
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/settings`).set({
+                    startingChips: settings.startingChips,
+                    smallBlind: settings.smallBlind,
+                    bigBlind: settings.bigBlind,
+                    hostId: playerId,
+                    createdAt: Date.now()
+                });
+            } else {
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                roomData.settings = {
+                    startingChips: settings.startingChips,
+                    smallBlind: settings.smallBlind,
+                    bigBlind: settings.bigBlind
+                };
+                localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+            }
+            
+            // Обновляем данные игрока
+            addOrUpdatePlayer();
+            
             // Сохраняем настройки
             sessionStorage.setItem('gameSettings', JSON.stringify(settings));
             
             // Переходим на страницу игры (пока заглушка)
-            alert(`Game starting with room ID: ${roomId}\nSettings saved!`);
+            alert(`Room created!\nRoom ID: ${roomId}\n\nShare the link with your friends and wait for them to join.\nThe game table will be available soon!`);
             // Позже здесь будет: window.location.href = 'game.html';
+        }
+        
+        // Удаляем игрока при закрытии страницы
+        window.addEventListener('beforeunload', () => {
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/players/${playerId}`).remove();
+            } else {
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{"players": {}}');
+                if (roomData.players && roomData.players[playerId]) {
+                    delete roomData.players[playerId];
+                    localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+                }
+            }
+        });
+        
+        // Устанавливаем присутствие в Firebase (автоматическая очистка при отключении)
+        if (useFirebase) {
+            const presenceRef = database.ref(`rooms/${roomId}/players/${playerId}`);
+            database.ref('.info/connected').on('value', (snapshot) => {
+                if (snapshot.val() === true) {
+                    presenceRef.onDisconnect().remove();
+                }
+            });
         }
     </script>
 </body>
