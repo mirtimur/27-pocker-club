@@ -253,15 +253,11 @@
         <div class="players-list">
             <h3>Players <span id="playerCount">(1/10)</span></h3>
             <div id="playersContainer">
-                <div class="player-item">
-                    <div class="player-avatar" id="playerAvatar">P1</div>
-                    <div class="player-name" id="playerNameDisplay">Player 1 (You)</div>
-                    <div class="player-host-badge">HOST</div>
-                </div>
+                <!-- Игроки будут добавляться динамически -->
             </div>
         </div>
         
-        <button class="btn-primary" onclick="startGame()">Start Game</button>
+        <button class="btn-primary" id="actionButton" onclick="handleAction()">Start Game</button>
     </div>
     
     <script>
@@ -281,19 +277,81 @@
         const shareLink = `${window.location.origin}/27-pocker-club/room.html?id=${roomId}`;
         document.getElementById('shareLinkInput').value = shareLink;
         
+        // Проверяем, является ли пользователь хостом
+        let isHost = sessionStorage.getItem('isHost') === 'true';
+        
+        // Если isHost не установлен, значит пользователь перешел по ссылке напрямую
+        if (sessionStorage.getItem('isHost') === null) {
+            isHost = false;
+            sessionStorage.setItem('isHost', 'false');
+            sessionStorage.setItem('currentRoomId', roomId);
+        }
+        
+        // Настраиваем интерфейс в зависимости от роли
+        if (!isHost) {
+            // Если не хост, скрываем настройки блайндов
+            document.getElementById('smallBlind').parentElement.style.display = 'none';
+            document.getElementById('bigBlind').parentElement.style.display = 'none';
+            
+            // Меняем кнопку на "Save"
+            document.getElementById('actionButton').textContent = 'Save';
+            
+            // Загружаем имя если оно было сохранено
+            const savedName = sessionStorage.getItem('playerName');
+            if (savedName) {
+                document.getElementById('playerName').value = savedName;
+            } else {
+                document.getElementById('playerName').value = '';
+            }
+        }
+        
+        // Функция для отрисовки списка игроков
+        function renderPlayers() {
+            const playersContainer = document.getElementById('playersContainer');
+            const playerName = document.getElementById('playerName').value.trim() || 'Player';
+            
+            // Пока что показываем только текущего игрока
+            // TODO: В будущем здесь будет синхронизация с сервером
+            playersContainer.innerHTML = '';
+            
+            // Добавляем текущего игрока
+            const playerItem = document.createElement('div');
+            playerItem.className = 'player-item';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'player-avatar';
+            avatar.textContent = playerName.charAt(0).toUpperCase();
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'player-name';
+            nameDiv.textContent = `${playerName} (You)`;
+            
+            playerItem.appendChild(avatar);
+            playerItem.appendChild(nameDiv);
+            
+            // Если хост, добавляем бейдж
+            if (isHost) {
+                const hostBadge = document.createElement('div');
+                hostBadge.className = 'player-host-badge';
+                hostBadge.textContent = 'HOST';
+                playerItem.appendChild(hostBadge);
+            }
+            
+            playersContainer.appendChild(playerItem);
+            
+            // Обновляем счетчик игроков
+            document.getElementById('playerCount').textContent = '(1/10)';
+        }
+        
         // Обновление имени игрока в списке в реальном времени
         const playerNameInput = document.getElementById('playerName');
-        const playerNameDisplay = document.getElementById('playerNameDisplay');
-        const playerAvatar = document.getElementById('playerAvatar');
         
         playerNameInput.addEventListener('input', () => {
-            const name = playerNameInput.value.trim() || 'Player 1';
-            playerNameDisplay.textContent = `${name} (You)`;
-            
-            // Обновляем аватар (первая буква имени)
-            const initial = name.charAt(0).toUpperCase();
-            playerAvatar.textContent = initial;
+            renderPlayers();
         });
+        
+        // Первоначальная отрисовка игроков
+        renderPlayers();
         
         function copyRoomId() {
             navigator.clipboard.writeText(roomId).then(() => {
@@ -319,6 +377,36 @@
             });
         }
         
+        function handleAction() {
+            const playerName = document.getElementById('playerName').value.trim();
+            
+            if (!playerName) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            if (isHost) {
+                // Хост запускает игру
+                startGame();
+            } else {
+                // Игрок сохраняет свои данные
+                savePlayerData();
+            }
+        }
+        
+        function savePlayerData() {
+            const settings = {
+                roomId: roomId,
+                playerName: document.getElementById('playerName').value.trim(),
+                startingChips: parseInt(document.getElementById('startingChips').value)
+            };
+            
+            // Сохраняем настройки
+            sessionStorage.setItem('playerSettings', JSON.stringify(settings));
+            
+            alert(`Your settings saved!\nName: ${settings.playerName}\nChips: ${settings.startingChips}\n\nWaiting for host to start the game...`);
+        }
+        
         function startGame() {
             // Собираем настройки игры
             const settings = {
@@ -335,32 +423,6 @@
             // Переходим на страницу игры (пока заглушка)
             alert(`Game starting with room ID: ${roomId}\nSettings saved!`);
             // Позже здесь будет: window.location.href = 'game.html';
-        }
-        
-        // Проверяем, является ли пользователь хостом
-        let isHost = sessionStorage.getItem('isHost') === 'true';
-        
-        // Если isHost не установлен, значит пользователь перешел по ссылке напрямую
-        if (sessionStorage.getItem('isHost') === null) {
-            isHost = false;
-            sessionStorage.setItem('isHost', 'false');
-            sessionStorage.setItem('currentRoomId', roomId);
-        }
-        
-        if (!isHost) {
-            // Если не хост, скрываем настройки блайндов и отключаем starting chips
-            document.getElementById('smallBlind').parentElement.style.display = 'none';
-            document.getElementById('bigBlind').parentElement.style.display = 'none';
-            
-            // Загружаем имя если оно было сохранено
-            const savedName = sessionStorage.getItem('playerName');
-            if (savedName) {
-                document.getElementById('playerName').value = savedName;
-                playerNameDisplay.textContent = `${savedName} (You)`;
-                playerAvatar.textContent = savedName.charAt(0).toUpperCase();
-            } else {
-                document.getElementById('playerName').value = '';
-            }
         }
     </script>
 </body>
