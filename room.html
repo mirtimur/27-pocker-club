@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Settings - 27 Poker Club</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; 
+            background: #0b0f1a; 
+            color: #fff; 
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        
+        .room-id-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .room-id-display h2 {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .room-id {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 12px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .settings-panel h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .setting-item {
+            margin-bottom: 20px;
+        }
+        
+        .setting-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .setting-item input,
+        .setting-item select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .setting-item input:focus,
+        .setting-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .players-list {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .players-list h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .player-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+        
+        .player-name {
+            flex: 1;
+        }
+        
+        .player-host-badge {
+            background: rgba(102, 126, 234, 0.3);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            padding: 16px 48px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .share-link {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .share-link p {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 12px;
+        }
+        
+        .share-link input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Room Settings</h1>
+        </div>
+        
+        <div class="room-id-display">
+            <h2>Room ID</h2>
+            <div class="room-id" id="roomIdDisplay">------</div>
+            <button class="copy-btn" onclick="copyRoomId()">Copy Room ID</button>
+        </div>
+        
+        <div class="share-link">
+            <p>Share this link with friends to join:</p>
+            <input type="text" id="shareLinkInput" readonly>
+            <button class="copy-btn" onclick="copyShareLink()">Copy Link</button>
+        </div>
+        
+        <div class="settings-panel">
+            <h3>Game Settings</h3>
+            
+            <div class="setting-item">
+                <label>Your Name</label>
+                <input type="text" id="playerName" placeholder="Enter your name" value="Player 1">
+            </div>
+            
+            <div class="setting-item">
+                <label>Starting Chips</label>
+                <select id="startingChips">
+                    <option value="1000">1,000</option>
+                    <option value="2000" selected>2,000</option>
+                    <option value="5000">5,000</option>
+                    <option value="10000">10,000</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>Small Blind</label>
+                <select id="smallBlind">
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>Big Blind</label>
+                <select id="bigBlind">
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="players-list">
+            <h3>Players <span id="playerCount">(1/10)</span></h3>
+            <div id="playersContainer">
+                <div class="player-item">
+                    <div class="player-avatar">P1</div>
+                    <div class="player-name">Player 1 (You)</div>
+                    <div class="player-host-badge">HOST</div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="btn-primary" onclick="startGame()">Start Game</button>
+    </div>
+    
+    <script>
+        // Получаем ID комнаты из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('id');
+        
+        if (!roomId) {
+            // Если нет ID, возвращаемся на главную
+            window.location.href = 'index.html';
+        }
+        
+        // Отображаем ID комнаты
+        document.getElementById('roomIdDisplay').textContent = roomId;
+        
+        // Формируем ссылку для приглашения
+        const shareLink = `${window.location.origin}/join.html?room=${roomId}`;
+        document.getElementById('shareLinkInput').value = shareLink;
+        
+        function copyRoomId() {
+            navigator.clipboard.writeText(roomId).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        function copyShareLink() {
+            const input = document.getElementById('shareLinkInput');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        function startGame() {
+            // Собираем настройки игры
+            const settings = {
+                roomId: roomId,
+                playerName: document.getElementById('playerName').value || 'Player 1',
+                startingChips: parseInt(document.getElementById('startingChips').value),
+                smallBlind: parseInt(document.getElementById('smallBlind').value),
+                bigBlind: parseInt(document.getElementById('bigBlind').value)
+            };
+            
+            // Сохраняем настройки
+            sessionStorage.setItem('gameSettings', JSON.stringify(settings));
+            
+            // Переходим на страницу игры (пока заглушка)
+            alert(`Game starting with room ID: ${roomId}\nSettings saved!`);
+            // Позже здесь будет: window.location.href = 'game.html';
+        }
+        
+        // Проверяем, является ли пользователь хостом
+        const isHost = sessionStorage.getItem('isHost') === 'true';
+        if (!isHost) {
+            // Если не хост, отключаем настройки
+            document.querySelectorAll('.setting-item select, .setting-item input').forEach(el => {
+                if (el.id !== 'playerName') {
+                    el.disabled = true;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
