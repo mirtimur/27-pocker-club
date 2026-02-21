@@ -254,8 +254,8 @@
             <h3>Players <span id="playerCount">(1/10)</span></h3>
             <div id="playersContainer">
                 <div class="player-item">
-                    <div class="player-avatar">P1</div>
-                    <div class="player-name">Player 1 (You)</div>
+                    <div class="player-avatar" id="playerAvatar">P1</div>
+                    <div class="player-name" id="playerNameDisplay">Player 1 (You)</div>
                     <div class="player-host-badge">HOST</div>
                 </div>
             </div>
@@ -280,6 +280,20 @@
         // Формируем ссылку для приглашения
         const shareLink = `${window.location.origin}/join.html?room=${roomId}`;
         document.getElementById('shareLinkInput').value = shareLink;
+        
+        // Обновление имени игрока в списке в реальном времени
+        const playerNameInput = document.getElementById('playerName');
+        const playerNameDisplay = document.getElementById('playerNameDisplay');
+        const playerAvatar = document.getElementById('playerAvatar');
+        
+        playerNameInput.addEventListener('input', () => {
+            const name = playerNameInput.value.trim() || 'Player 1';
+            playerNameDisplay.textContent = `${name} (You)`;
+            
+            // Обновляем аватар (первая буква имени)
+            const initial = name.charAt(0).toUpperCase();
+            playerAvatar.textContent = initial;
+        });
         
         function copyRoomId() {
             navigator.clipboard.writeText(roomId).then(() => {
