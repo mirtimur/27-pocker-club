@@ -329,6 +329,10 @@
         
         // Функция для загрузки настроек из Firebase/localStorage
         async function loadRoomSettings() {
+            // Проверяем, есть ли сохраненные данные игрока в sessionStorage
+            const savedPlayerName = sessionStorage.getItem(`playerName_${roomId}`);
+            const savedPlayerChips = sessionStorage.getItem(`playerChips_${roomId}`);
+            
             if (useFirebase) {
                 // Загружаем из Firebase
                 const settingsSnapshot = await database.ref(`rooms/${roomId}/settings`).once('value');
@@ -341,13 +345,15 @@
                     }
                 }
                 
-                // Загружаем данные игрока
-                const playerSnapshot = await database.ref(`rooms/${roomId}/players/${playerId}`).once('value');
-                const playerData = playerSnapshot.val();
-                if (playerData && playerData.name) {
-                    document.getElementById('playerName').value = playerData.name;
-                    // Восстанавливаем игрока в комнате (обновляем timestamp)
+                // Восстанавливаем игрока из sessionStorage (если был сохранен)
+                if (savedPlayerName) {
+                    document.getElementById('playerName').value = savedPlayerName;
+                    if (savedPlayerChips) {
+                        document.getElementById('startingChips').value = savedPlayerChips;
+                    }
+                    // ВСЕГДА восстанавливаем игрока в комнате
                     await addOrUpdatePlayer();
+                    console.log('Player restored from sessionStorage:', savedPlayerName);
                 }
             } else {
                 // Загружаем из localStorage
@@ -360,12 +366,18 @@
                     }
                 }
                 
-                // Загружаем данные игрока
-                if (roomData.players && roomData.players[playerId]) {
+                // Восстанавливаем игрока из sessionStorage или из roomData
+                if (savedPlayerName) {
+                    document.getElementById('playerName').value = savedPlayerName;
+                    if (savedPlayerChips) {
+                        document.getElementById('startingChips').value = savedPlayerChips;
+                    }
+                    addOrUpdatePlayer();
+                    console.log('Player restored from sessionStorage:', savedPlayerName);
+                } else if (roomData.players && roomData.players[playerId]) {
                     const playerData = roomData.players[playerId];
                     if (playerData.name) {
                         document.getElementById('playerName').value = playerData.name;
-                        // Восстанавливаем игрока в комнате (обновляем timestamp)
                         addOrUpdatePlayer();
                     }
                 }
@@ -552,6 +564,11 @@
             }
             
             const startingChips = parseInt(document.getElementById('startingChips').value) || 2000;
+            
+            // СОХРАНЯЕМ данные игрока в sessionStorage для восстановления после перезагрузки
+            sessionStorage.setItem(`playerName_${roomId}`, playerName);
+            sessionStorage.setItem(`playerChips_${roomId}`, startingChips);
+            console.log('Saved to sessionStorage:', playerName, startingChips);
             
             // Сохраняем настройки комнаты (для хоста)
             if (isHost) {
