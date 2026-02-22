@@ -89,23 +89,23 @@
         }
         
         /* Позиции мест вокруг стола (за пределами стола) */
-        /* 3 сверху */
-        .seat-1 { top: -110px; left: 50%; transform: translateX(-50%); }
-        .seat-2 { top: -110px; left: calc(50% - 200px); }
-        .seat-3 { top: -110px; left: calc(50% + 200px); transform: translateX(-100%); }
+        /* 3 сверху - равномерно распределены */
+        .seat-1 { top: -110px; left: calc(50% - 300px); }
+        .seat-2 { top: -110px; left: 50%; transform: translateX(-50%); }
+        .seat-3 { top: -110px; left: calc(50% + 300px); transform: translateX(-100%); }
         
-        /* 2 справа */
-        .seat-4 { top: 30%; right: -160px; transform: translateY(-50%); }
-        .seat-5 { bottom: 30%; right: -160px; transform: translateY(50%); }
+        /* 2 справа - равномерно по вертикали */
+        .seat-4 { top: calc(50% - 120px); right: -180px; transform: translateY(-50%); }
+        .seat-5 { bottom: calc(50% - 120px); right: -180px; transform: translateY(50%); }
         
-        /* 3 снизу */
-        .seat-6 { bottom: -110px; left: 50%; transform: translateX(-50%); }
-        .seat-7 { bottom: -110px; left: calc(50% - 200px); }
-        .seat-8 { bottom: -110px; left: calc(50% + 200px); transform: translateX(-100%); }
+        /* 3 снизу - равномерно распределены */
+        .seat-6 { bottom: -110px; left: calc(50% - 300px); }
+        .seat-7 { bottom: -110px; left: 50%; transform: translateX(-50%); }
+        .seat-8 { bottom: -110px; left: calc(50% + 300px); transform: translateX(-100%); }
         
-        /* 2 слева */
-        .seat-9 { top: 30%; left: -160px; transform: translateY(-50%); }
-        .seat-10 { bottom: 30%; left: -160px; transform: translateY(50%); }
+        /* 2 слева - равномерно по вертикали */
+        .seat-9 { top: calc(50% - 120px); left: -180px; transform: translateY(-50%); }
+        .seat-10 { bottom: calc(50% - 120px); left: -180px; transform: translateY(50%); }
         
         /* Кнопка "Sit" - овальная форма */
         .sit-button {
