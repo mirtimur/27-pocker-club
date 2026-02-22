@@ -264,6 +264,7 @@
         
         <button class="btn-primary" onclick="saveSettings()" style="margin-bottom: 12px;">Save Settings</button>
         <button class="btn-primary" id="createRoomBtn" onclick="startGame()" style="display: none;">Create Room</button>
+        <button class="btn-primary" id="joinGameBtn" onclick="joinGame()" style="display: none;">Join Game</button>
     </div>
     
     <script>
@@ -393,11 +394,19 @@
             // Скрываем кнопку создания комнаты для гостей
             document.getElementById('createRoomBtn').style.display = 'none';
             
+            // Показываем кнопку Join Game если игрок уже сохранил настройки
+            const savedName = sessionStorage.getItem(`playerName_${roomId}`);
+            if (savedName) {
+                document.getElementById('joinGameBtn').style.display = 'block';
+            }
+            
             // Очищаем поле имени для гостя (будет заполнено при загрузке если есть сохраненное)
             document.getElementById('playerName').value = '';
         } else {
             // Для хоста показываем кнопку Create Room
             document.getElementById('createRoomBtn').style.display = 'block';
+            // Скрываем кнопку Join Game для хоста
+            document.getElementById('joinGameBtn').style.display = 'none';
         }
         
         // Функция для добавления/обновления игрока в комнате
@@ -603,8 +612,23 @@
             if (isHost) {
                 alert(`Settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nYou can now create the room.`);
             } else {
-                alert(`Your settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nWaiting for host to start the game...`);
+                // Показываем кнопку Join Game для гостя
+                document.getElementById('joinGameBtn').style.display = 'block';
+                alert(`Your settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nYou can now join the game table!`);
             }
+        }
+        
+        // Функция для присоединения к игре (для гостей)
+        function joinGame() {
+            const playerName = sessionStorage.getItem(`playerName_${roomId}`);
+            
+            if (!playerName) {
+                alert('Please save your settings first!');
+                return;
+            }
+            
+            // Переходим на страницу игры
+            window.location.href = `game.html?id=${roomId}`;
         }
         
         function startGame() {
@@ -629,8 +653,8 @@
                         startedAt: Date.now()
                     });
                     
-                    alert(`Room created!\nRoom ID: ${roomId}\n\nShare the link with your friends and wait for them to join.\nThe game table will be available soon!`);
-                    // Позже здесь будет: window.location.href = 'game.html';
+                    // Переходим на страницу игры
+                    window.location.href = `game.html?id=${roomId}`;
                 });
             } else {
                 const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
@@ -646,8 +670,8 @@
                 };
                 localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
                 
-                alert(`Room created!\nRoom ID: ${roomId}\n\nShare the link with your friends and wait for them to join.\nThe game table will be available soon!`);
-                // Позже здесь будет: window.location.href = 'game.html';
+                // Переходим на страницу игры
+                window.location.href = `game.html?id=${roomId}`;
             }
         }
         
