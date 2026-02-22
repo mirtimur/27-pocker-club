@@ -89,22 +89,29 @@
         }
         
         /* Позиции мест вокруг стола (за пределами стола) */
-        .seat-1 { top: -100px; left: 50%; transform: translateX(-50%); }
-        .seat-2 { top: 20px; right: -80px; }
-        .seat-3 { top: 160px; right: -100px; }
-        .seat-4 { bottom: 160px; right: -100px; }
-        .seat-5 { bottom: 20px; right: -80px; }
-        .seat-6 { bottom: -100px; left: 50%; transform: translateX(-50%); }
-        .seat-7 { bottom: 20px; left: -80px; }
-        .seat-8 { bottom: 160px; left: -100px; }
-        .seat-9 { top: 160px; left: -100px; }
-        .seat-10 { top: 20px; left: -80px; }
+        /* 3 сверху */
+        .seat-1 { top: -110px; left: 50%; transform: translateX(-50%); }
+        .seat-2 { top: -110px; left: calc(50% - 200px); }
+        .seat-3 { top: -110px; left: calc(50% + 200px); transform: translateX(-100%); }
         
-        /* Кнопка "Sit" */
+        /* 2 справа */
+        .seat-4 { top: 30%; right: -160px; transform: translateY(-50%); }
+        .seat-5 { bottom: 30%; right: -160px; transform: translateY(50%); }
+        
+        /* 3 снизу */
+        .seat-6 { bottom: -110px; left: 50%; transform: translateX(-50%); }
+        .seat-7 { bottom: -110px; left: calc(50% - 200px); }
+        .seat-8 { bottom: -110px; left: calc(50% + 200px); transform: translateX(-100%); }
+        
+        /* 2 слева */
+        .seat-9 { top: 30%; left: -160px; transform: translateY(-50%); }
+        .seat-10 { bottom: 30%; left: -160px; transform: translateY(50%); }
+        
+        /* Кнопка "Sit" - овальная форма */
         .sit-button {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
+            width: 140px;
+            height: 70px;
+            border-radius: 35px;
             background: rgba(102, 126, 234, 0.3);
             border: 3px solid rgba(102, 126, 234, 0.6);
             color: #fff;
@@ -114,6 +121,10 @@
             transition: all 0.3s;
             position: relative;
             backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
         .sit-button:hover {
