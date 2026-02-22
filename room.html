@@ -262,7 +262,8 @@
             </div>
         </div>
         
-        <button class="btn-primary" id="actionButton" onclick="handleAction()">Create Room</button>
+        <button class="btn-primary" onclick="saveSettings()" style="margin-bottom: 12px;">Save Settings</button>
+        <button class="btn-primary" id="createRoomBtn" onclick="startGame()" style="display: none;">Create Room</button>
     </div>
     
     <script>
@@ -302,8 +303,12 @@
             useFirebase = false;
         }
         
-        // Генерация уникального ID для игрока
-        const playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Генерация уникального ID для игрока (или загрузка существующего)
+        let playerId = sessionStorage.getItem(`playerId_${roomId}`);
+        if (!playerId) {
+            playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem(`playerId_${roomId}`, playerId);
+        }
         
         // Отображаем ID комнаты
         document.getElementById('roomIdDisplay').textContent = roomId;
@@ -322,23 +327,69 @@
             sessionStorage.setItem('currentRoomId', roomId);
         }
         
+        // Функция для загрузки настроек из Firebase/localStorage
+        function loadRoomSettings() {
+            if (useFirebase) {
+                // Загружаем из Firebase
+                database.ref(`rooms/${roomId}/settings`).once('value', (snapshot) => {
+                    const settings = snapshot.val();
+                    if (settings) {
+                        document.getElementById('startingChips').value = settings.startingChips || 2000;
+                        if (isHost) {
+                            document.getElementById('smallBlind').value = settings.smallBlind || 10;
+                            document.getElementById('bigBlind').value = settings.bigBlind || 20;
+                        }
+                    }
+                });
+                
+                // Загружаем данные игрока
+                database.ref(`rooms/${roomId}/players/${playerId}`).once('value', (snapshot) => {
+                    const playerData = snapshot.val();
+                    if (playerData && playerData.name) {
+                        document.getElementById('playerName').value = playerData.name;
+                        renderPlayers(); // Перерисовываем список игроков
+                    }
+                });
+            } else {
+                // Загружаем из localStorage
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                if (roomData.settings) {
+                    document.getElementById('startingChips').value = roomData.settings.startingChips || 2000;
+                    if (isHost) {
+                        document.getElementById('smallBlind').value = roomData.settings.smallBlind || 10;
+                        document.getElementById('bigBlind').value = roomData.settings.bigBlind || 20;
+                    }
+                }
+                
+                // Загружаем данные игрока
+                if (roomData.players && roomData.players[playerId]) {
+                    const playerData = roomData.players[playerId];
+                    if (playerData.name) {
+                        document.getElementById('playerName').value = playerData.name;
+                        renderPlayers(); // Перерисовываем список игроков
+                    }
+                }
+            }
+        }
+        
         // Настраиваем интерфейс в зависимости от роли
         if (!isHost) {
             // Если не хост, скрываем настройки блайндов
             document.getElementById('smallBlind').parentElement.style.display = 'none';
             document.getElementById('bigBlind').parentElement.style.display = 'none';
             
-            // Меняем кнопку на "Save"
-            document.getElementById('actionButton').textContent = 'Save';
+            // Скрываем кнопку создания комнаты для гостей
+            document.getElementById('createRoomBtn').style.display = 'none';
             
-            // Загружаем имя если оно было сохранено
-            const savedName = sessionStorage.getItem('playerName');
-            if (savedName) {
-                document.getElementById('playerName').value = savedName;
-            } else {
-                document.getElementById('playerName').value = '';
-            }
+            // Очищаем поле имени для гостя (будет заполнено при загрузке если есть сохраненное)
+            document.getElementById('playerName').value = '';
+        } else {
+            // Для хоста показываем кнопку Create Room
+            document.getElementById('createRoomBtn').style.display = 'block';
         }
+        
+        // Загружаем сохраненные настройки
+        loadRoomSettings();
         
         // Функция для отрисовки списка игроков
         function renderPlayers() {
@@ -471,13 +522,7 @@
             }, 2000);
         }
         
-        // Добавляем игрока при загрузке страницы
-        addOrUpdatePlayer();
-        
-        // Обновляем данные игрока при изменении имени
-        playerNameInput.addEventListener('blur', () => {
-            addOrUpdatePlayer();
-        });
+        // Не добавляем игрока автоматически - только после нажатия Save
         
         function copyRoomId() {
             navigator.clipboard.writeText(roomId).then(() => {
@@ -503,7 +548,8 @@
             });
         }
         
-        function handleAction() {
+        // Универсальная функция сохранения настроек
+        function saveSettings() {
             const playerName = document.getElementById('playerName').value.trim();
             
             if (!playerName) {
@@ -511,83 +557,87 @@
                 return;
             }
             
+            const startingChips = parseInt(document.getElementById('startingChips').value) || 2000;
+            
+            // Сохраняем настройки комнаты (для хоста)
             if (isHost) {
-                // Хост запускает игру
-                startGame();
-            } else {
-                // Игрок сохраняет свои данные
-                savePlayerData();
+                const smallBlind = parseInt(document.getElementById('smallBlind').value) || 10;
+                const bigBlind = parseInt(document.getElementById('bigBlind').value) || 20;
+                
+                if (useFirebase) {
+                    database.ref(`rooms/${roomId}/settings`).set({
+                        startingChips: startingChips,
+                        smallBlind: smallBlind,
+                        bigBlind: bigBlind,
+                        hostId: playerId,
+                        updatedAt: Date.now()
+                    });
+                } else {
+                    const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                    roomData.settings = {
+                        startingChips: startingChips,
+                        smallBlind: smallBlind,
+                        bigBlind: bigBlind,
+                        hostId: playerId,
+                        updatedAt: Date.now()
+                    };
+                    localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+                }
             }
-        }
-        
-        function savePlayerData() {
-            const playerName = document.getElementById('playerName').value.trim();
             
-            if (!playerName) {
-                alert('Please enter your name');
-                return;
-            }
-            
-            const settings = {
-                roomId: roomId,
-                playerName: playerName,
-                startingChips: parseInt(document.getElementById('startingChips').value)
-            };
-            
-            // Сохраняем настройки
-            sessionStorage.setItem('playerSettings', JSON.stringify(settings));
-            
-            // Обновляем данные игрока в комнате
+            // Обновляем данные игрока
             addOrUpdatePlayer();
             
-            alert(`Your settings saved!\nName: ${settings.playerName}\nChips: ${settings.startingChips}\n\nWaiting for host to start the game...`);
+            // Показываем сообщение
+            if (isHost) {
+                alert(`Settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nYou can now create the room.`);
+            } else {
+                alert(`Your settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nWaiting for host to start the game...`);
+            }
         }
         
         function startGame() {
             const playerName = document.getElementById('playerName').value.trim();
             
             if (!playerName) {
-                alert('Please enter your name');
+                alert('Please save your settings first!');
                 return;
             }
             
-            // Собираем настройки игры
-            const settings = {
-                roomId: roomId,
-                playerName: playerName,
-                startingChips: parseInt(document.getElementById('startingChips').value),
-                smallBlind: parseInt(document.getElementById('smallBlind').value),
-                bigBlind: parseInt(document.getElementById('bigBlind').value)
-            };
-            
-            // Сохраняем настройки комнаты в Firebase/localStorage
+            // Проверяем, что настройки сохранены
             if (useFirebase) {
-                database.ref(`rooms/${roomId}/settings`).set({
-                    startingChips: settings.startingChips,
-                    smallBlind: settings.smallBlind,
-                    bigBlind: settings.bigBlind,
-                    hostId: playerId,
-                    createdAt: Date.now()
+                database.ref(`rooms/${roomId}/settings`).once('value', (snapshot) => {
+                    if (!snapshot.val()) {
+                        alert('Please save your settings first!');
+                        return;
+                    }
+                    
+                    // Помечаем комнату как запущенную
+                    database.ref(`rooms/${roomId}/status`).set({
+                        started: true,
+                        startedAt: Date.now()
+                    });
+                    
+                    alert(`Room created!\nRoom ID: ${roomId}\n\nShare the link with your friends and wait for them to join.\nThe game table will be available soon!`);
+                    // Позже здесь будет: window.location.href = 'game.html';
                 });
             } else {
                 const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
-                roomData.settings = {
-                    startingChips: settings.startingChips,
-                    smallBlind: settings.smallBlind,
-                    bigBlind: settings.bigBlind
+                if (!roomData.settings) {
+                    alert('Please save your settings first!');
+                    return;
+                }
+                
+                // Помечаем комнату как запущенную
+                roomData.status = {
+                    started: true,
+                    startedAt: Date.now()
                 };
                 localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+                
+                alert(`Room created!\nRoom ID: ${roomId}\n\nShare the link with your friends and wait for them to join.\nThe game table will be available soon!`);
+                // Позже здесь будет: window.location.href = 'game.html';
             }
-            
-            // Обновляем данные игрока
-            addOrUpdatePlayer();
-            
-            // Сохраняем настройки
-            sessionStorage.setItem('gameSettings', JSON.stringify(settings));
-            
-            // Переходим на страницу игры (пока заглушка)
-            alert(`Room created!\nRoom ID: ${roomId}\n\nShare the link with your friends and wait for them to join.\nThe game table will be available soon!`);
-            // Позже здесь будет: window.location.href = 'game.html';
         }
         
         // Удаляем игрока при закрытии страницы
