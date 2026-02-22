@@ -185,6 +185,43 @@
             transform: none;
         }
         
+        /* Индикатор ожидания */
+        .waiting-indicator {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 24px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+        
+        .waiting-indicator.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .waiting-text {
+            font-size: 16px;
+            color: #667eea;
+            text-align: center;
+            font-weight: 600;
+        }
+        
         .share-link {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -265,6 +302,12 @@
         <button class="btn-primary" onclick="saveSettings()" style="margin-bottom: 12px;">Save Settings</button>
         <button class="btn-primary" id="createRoomBtn" onclick="startGame()" style="display: none;">Create Room</button>
         <button class="btn-primary" id="joinGameBtn" onclick="joinGame()" style="display: none;">Join Game</button>
+        
+        <!-- Индикатор ожидания -->
+        <div class="waiting-indicator" id="waitingIndicator">
+            <div class="spinner"></div>
+            <div class="waiting-text">Waiting when host starts the game...</div>
+        </div>
     </div>
     
     <script>
@@ -394,10 +437,29 @@
             // Скрываем кнопку создания комнаты для гостей
             document.getElementById('createRoomBtn').style.display = 'none';
             
-            // Показываем кнопку Join Game если игрок уже сохранил настройки
+            // Показываем индикатор ожидания если игрок уже сохранил настройки
             const savedName = sessionStorage.getItem(`playerName_${roomId}`);
             if (savedName) {
-                document.getElementById('joinGameBtn').style.display = 'block';
+                document.getElementById('waitingIndicator').classList.add('active');
+            }
+            
+            // Слушаем изменения статуса комнаты (гость ждет запуска)
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/status`).on('value', (snapshot) => {
+                    const status = snapshot.val();
+                    if (status && status.started) {
+                        // Хост запустил игру - автоматически переходим
+                        window.location.href = `game.html?id=${roomId}`;
+                    }
+                });
+            } else {
+                // Для localStorage - проверяем статус каждые 2 секунды
+                setInterval(() => {
+                    const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                    if (roomData.status && roomData.status.started) {
+                        window.location.href = `game.html?id=${roomId}`;
+                    }
+                }, 2000);
             }
             
             // Очищаем поле имени для гостя (будет заполнено при загрузке если есть сохраненное)
@@ -612,9 +674,30 @@
             if (isHost) {
                 alert(`Settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nYou can now create the room.`);
             } else {
-                // Показываем кнопку Join Game для гостя
-                document.getElementById('joinGameBtn').style.display = 'block';
-                alert(`Your settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nYou can now join the game table!`);
+                // Скрываем кнопку Join Game и показываем индикатор ожидания
+                document.getElementById('joinGameBtn').style.display = 'none';
+                document.getElementById('waitingIndicator').classList.add('active');
+                alert(`Your settings saved!\nName: ${playerName}\nChips: ${startingChips}\n\nWaiting for host to start the game...`);
+                
+                // Подписываемся на изменения статуса комнаты для автоматического старта
+                if (useFirebase) {
+                    database.ref(`rooms/${roomId}/status`).on('value', (snapshot) => {
+                        const status = snapshot.val();
+                        if (status && status.started === true) {
+                            // Автоматически переходим на страницу игры
+                            window.location.href = `game.html?id=${roomId}`;
+                        }
+                    });
+                } else {
+                    // Для localStorage используем polling
+                    const checkInterval = setInterval(() => {
+                        const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                        if (roomData.status && roomData.status.started === true) {
+                            clearInterval(checkInterval);
+                            window.location.href = `game.html?id=${roomId}`;
+                        }
+                    }, 1000); // Проверяем каждую секунду
+                }
             }
         }
         
