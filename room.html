@@ -328,29 +328,27 @@
         }
         
         // Функция для загрузки настроек из Firebase/localStorage
-        function loadRoomSettings() {
+        async function loadRoomSettings() {
             if (useFirebase) {
                 // Загружаем из Firebase
-                database.ref(`rooms/${roomId}/settings`).once('value', (snapshot) => {
-                    const settings = snapshot.val();
-                    if (settings) {
-                        document.getElementById('startingChips').value = settings.startingChips || 2000;
-                        if (isHost) {
-                            document.getElementById('smallBlind').value = settings.smallBlind || 10;
-                            document.getElementById('bigBlind').value = settings.bigBlind || 20;
-                        }
+                const settingsSnapshot = await database.ref(`rooms/${roomId}/settings`).once('value');
+                const settings = settingsSnapshot.val();
+                if (settings) {
+                    document.getElementById('startingChips').value = settings.startingChips || 2000;
+                    if (isHost) {
+                        document.getElementById('smallBlind').value = settings.smallBlind || 10;
+                        document.getElementById('bigBlind').value = settings.bigBlind || 20;
                     }
-                });
+                }
                 
                 // Загружаем данные игрока
-                database.ref(`rooms/${roomId}/players/${playerId}`).once('value', (snapshot) => {
-                    const playerData = snapshot.val();
-                    if (playerData && playerData.name) {
-                        document.getElementById('playerName').value = playerData.name;
-                        // Восстанавливаем игрока в комнате
-                        addOrUpdatePlayer();
-                    }
-                });
+                const playerSnapshot = await database.ref(`rooms/${roomId}/players/${playerId}`).once('value');
+                const playerData = playerSnapshot.val();
+                if (playerData && playerData.name) {
+                    document.getElementById('playerName').value = playerData.name;
+                    // Восстанавливаем игрока в комнате (обновляем timestamp)
+                    await addOrUpdatePlayer();
+                }
             } else {
                 // Загружаем из localStorage
                 const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
@@ -367,7 +365,7 @@
                     const playerData = roomData.players[playerId];
                     if (playerData.name) {
                         document.getElementById('playerName').value = playerData.name;
-                        // Восстанавливаем игрока в комнате
+                        // Восстанавливаем игрока в комнате (обновляем timestamp)
                         addOrUpdatePlayer();
                     }
                 }
@@ -466,24 +464,26 @@
             document.getElementById('playerCount').textContent = `(${playerCount}/10)`;
         }
         
-        // Загружаем сохраненные настройки (вызываем после определения всех функций)
-        loadRoomSettings();
-        
-        // Слушаем изменения в Firebase
-        if (useFirebase) {
-            database.ref(`rooms/${roomId}/players`).on('value', (snapshot) => {
-                const players = snapshot.val() || {};
-                renderAllPlayers(players);
-            });
-        } else {
-            // Сразу загружаем игроков из localStorage
-            loadPlayersFromStorage();
+        // Загружаем сохраненные настройки и запускаем слушатели после загрузки
+        (async () => {
+            await loadRoomSettings();
             
-            // Polling для localStorage (проверяем каждые 2 секунды)
-            setInterval(() => {
+            // ПОСЛЕ загрузки настроек запускаем слушатели изменений
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/players`).on('value', (snapshot) => {
+                    const players = snapshot.val() || {};
+                    renderAllPlayers(players);
+                });
+            } else {
+                // Сразу загружаем игроков из localStorage
                 loadPlayersFromStorage();
-            }, 2000);
-        }
+                
+                // Polling для localStorage (проверяем каждые 2 секунды)
+                setInterval(() => {
+                    loadPlayersFromStorage();
+                }, 2000);
+            }
+        })();
         
         // Обновление имени игрока в списке в реальном времени (только при вводе)
         const playerNameInput = document.getElementById('playerName');
@@ -634,28 +634,18 @@
             }
         }
         
-        // Удаляем игрока при закрытии страницы
-        window.addEventListener('beforeunload', () => {
-            if (useFirebase) {
-                database.ref(`rooms/${roomId}/players/${playerId}`).remove();
-            } else {
-                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{"players": {}}');
-                if (roomData.players && roomData.players[playerId]) {
-                    delete roomData.players[playerId];
-                    localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
-                }
-            }
-        });
-        
-        // Устанавливаем присутствие в Firebase (автоматическая очистка при отключении)
+        // Устанавливаем присутствие в Firebase (автоматическая очистка только при реальном отключении)
         if (useFirebase) {
             const presenceRef = database.ref(`rooms/${roomId}/players/${playerId}`);
             database.ref('.info/connected').on('value', (snapshot) => {
                 if (snapshot.val() === true) {
+                    // Удаляем игрока только при реальном отключении (закрытие вкладки, потеря соединения)
+                    // НЕ при обновлении страницы
                     presenceRef.onDisconnect().remove();
                 }
             });
         }
+        // Для localStorage игроки остаются в комнате даже после обновления страницы
     </script>
 </body>
 </html>
