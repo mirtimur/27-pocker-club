@@ -347,7 +347,8 @@
                     const playerData = snapshot.val();
                     if (playerData && playerData.name) {
                         document.getElementById('playerName').value = playerData.name;
-                        renderPlayers(); // Перерисовываем список игроков
+                        // Восстанавливаем игрока в комнате
+                        addOrUpdatePlayer();
                     }
                 });
             } else {
@@ -366,7 +367,8 @@
                     const playerData = roomData.players[playerId];
                     if (playerData.name) {
                         document.getElementById('playerName').value = playerData.name;
-                        renderPlayers(); // Перерисовываем список игроков
+                        // Восстанавливаем игрока в комнате
+                        addOrUpdatePlayer();
                     }
                 }
             }
@@ -387,57 +389,6 @@
             // Для хоста показываем кнопку Create Room
             document.getElementById('createRoomBtn').style.display = 'block';
         }
-        
-        // Загружаем сохраненные настройки
-        loadRoomSettings();
-        
-        // Функция для отрисовки списка игроков
-        function renderPlayers() {
-            const playersContainer = document.getElementById('playersContainer');
-            const playerName = document.getElementById('playerName').value.trim() || 'Player';
-            
-            // Пока что показываем только текущего игрока
-            // TODO: В будущем здесь будет синхронизация с сервером
-            playersContainer.innerHTML = '';
-            
-            // Добавляем текущего игрока
-            const playerItem = document.createElement('div');
-            playerItem.className = 'player-item';
-            
-            const avatar = document.createElement('div');
-            avatar.className = 'player-avatar';
-            avatar.textContent = playerName.charAt(0).toUpperCase();
-            
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'player-name';
-            nameDiv.textContent = `${playerName} (You)`;
-            
-            playerItem.appendChild(avatar);
-            playerItem.appendChild(nameDiv);
-            
-            // Если хост, добавляем бейдж
-            if (isHost) {
-                const hostBadge = document.createElement('div');
-                hostBadge.className = 'player-host-badge';
-                hostBadge.textContent = 'HOST';
-                playerItem.appendChild(hostBadge);
-            }
-            
-            playersContainer.appendChild(playerItem);
-            
-            // Обновляем счетчик игроков
-            document.getElementById('playerCount').textContent = '(1/10)';
-        }
-        
-        // Обновление имени игрока в списке в реальном времени
-        const playerNameInput = document.getElementById('playerName');
-        
-        playerNameInput.addEventListener('input', () => {
-            renderPlayers();
-        });
-        
-        // Первоначальная отрисовка игроков
-        renderPlayers();
         
         // Функция для добавления/обновления игрока в комнате
         function addOrUpdatePlayer() {
@@ -480,6 +431,12 @@
             const playersList = Object.values(players);
             const playerCount = playersList.length;
             
+            if (playerCount === 0) {
+                // Если нет игроков, показываем заглушку
+                document.getElementById('playerCount').textContent = '(0/10)';
+                return;
+            }
+            
             playersList.forEach(player => {
                 const playerItem = document.createElement('div');
                 playerItem.className = 'player-item';
@@ -509,6 +466,9 @@
             document.getElementById('playerCount').textContent = `(${playerCount}/10)`;
         }
         
+        // Загружаем сохраненные настройки (вызываем после определения всех функций)
+        loadRoomSettings();
+        
         // Слушаем изменения в Firebase
         if (useFirebase) {
             database.ref(`rooms/${roomId}/players`).on('value', (snapshot) => {
@@ -516,13 +476,47 @@
                 renderAllPlayers(players);
             });
         } else {
+            // Сразу загружаем игроков из localStorage
+            loadPlayersFromStorage();
+            
             // Polling для localStorage (проверяем каждые 2 секунды)
             setInterval(() => {
                 loadPlayersFromStorage();
             }, 2000);
         }
         
-        // Не добавляем игрока автоматически - только после нажатия Save
+        // Обновление имени игрока в списке в реальном времени (только при вводе)
+        const playerNameInput = document.getElementById('playerName');
+        
+        playerNameInput.addEventListener('input', () => {
+            // При вводе имени не обновляем список сразу - только после Save
+        });
+        
+        // Функция для добавления/обновления игрока в комнате
+        function addOrUpdatePlayer() {
+            const playerName = document.getElementById('playerName').value.trim() || 'Player';
+            const startingChips = parseInt(document.getElementById('startingChips').value) || 2000;
+            
+            const playerData = {
+                id: playerId,
+                name: playerName,
+                chips: startingChips,
+                isHost: isHost,
+                timestamp: Date.now()
+            };
+            
+            if (useFirebase) {
+                // Сохраняем в Firebase
+                database.ref(`rooms/${roomId}/players/${playerId}`).set(playerData);
+            } else {
+                // Сохраняем в localStorage
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{"players": {}}');
+                roomData.players = roomData.players || {};
+                roomData.players[playerId] = playerData;
+                localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+                loadPlayersFromStorage();
+            }
+        }
         
         function copyRoomId() {
             navigator.clipboard.writeText(roomId).then(() => {
