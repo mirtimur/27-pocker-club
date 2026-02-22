@@ -36,10 +36,10 @@
         
         /* Покерный стол */
         .poker-table {
-            width: 900px;
-            height: 500px;
+            width: 1100px;
+            height: 600px;
             background: linear-gradient(135deg, #1a5f3e 0%, #0d432a 100%);
-            border-radius: 250px;
+            border-radius: 300px;
             position: relative;
             border: 15px solid #8b6914;
             box-shadow: 
@@ -88,17 +88,17 @@
             transition: transform 0.2s;
         }
         
-        /* Позиции мест вокруг стола */
-        .seat-1 { top: -70px; left: 50%; transform: translateX(-50%); }
-        .seat-2 { top: 10px; right: 80px; }
-        .seat-3 { top: 120px; right: 10px; }
-        .seat-4 { bottom: 120px; right: 10px; }
-        .seat-5 { bottom: 10px; right: 80px; }
-        .seat-6 { bottom: -70px; left: 50%; transform: translateX(-50%); }
-        .seat-7 { bottom: 10px; left: 80px; }
-        .seat-8 { bottom: 120px; left: 10px; }
-        .seat-9 { top: 120px; left: 10px; }
-        .seat-10 { top: 10px; left: 80px; }
+        /* Позиции мест вокруг стола (за пределами стола) */
+        .seat-1 { top: -100px; left: 50%; transform: translateX(-50%); }
+        .seat-2 { top: 20px; right: -80px; }
+        .seat-3 { top: 160px; right: -100px; }
+        .seat-4 { bottom: 160px; right: -100px; }
+        .seat-5 { bottom: 20px; right: -80px; }
+        .seat-6 { bottom: -100px; left: 50%; transform: translateX(-50%); }
+        .seat-7 { bottom: 20px; left: -80px; }
+        .seat-8 { bottom: 160px; left: -100px; }
+        .seat-9 { top: 160px; left: -100px; }
+        .seat-10 { top: 20px; left: -80px; }
         
         /* Кнопка "Sit" */
         .sit-button {
@@ -202,30 +202,30 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 16px 24px;
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
             backdrop-filter: blur(10px);
         }
         
-        .room-info h3 {
-            font-size: 14px;
-            opacity: 0.7;
-            margin-bottom: 4px;
-        }
-        
         .room-info .room-id {
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 700;
             letter-spacing: 2px;
             font-family: 'Courier New', monospace;
+            color: #ffd700;
         }
         
-        /* Кнопка выхода */
-        .leave-button {
+        /* Кнопки в правом верхнем углу */
+        .top-right-buttons {
             position: absolute;
             top: 20px;
             right: 20px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .leave-button {
             background: rgba(220, 38, 38, 0.2);
             border: 2px solid rgba(220, 38, 38, 0.6);
             color: #fff;
@@ -241,18 +241,47 @@
             background: rgba(220, 38, 38, 0.4);
             border-color: #dc2626;
         }
+        
+        .leave-seat-button {
+            background: rgba(234, 179, 8, 0.2);
+            border: 2px solid rgba(234, 179, 8, 0.6);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+        
+        .leave-seat-button.active {
+            display: block;
+        }
+        
+        .leave-seat-button:hover {
+            background: rgba(234, 179, 8, 0.4);
+            border-color: #eab308;
+        }
+        
+        /* Скрываем все кнопки SIT когда игрок сидит */
+        body.player-seated .sit-button {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
         <!-- Информация о комнате -->
         <div class="room-info">
-            <h3>ROOM ID</h3>
             <div class="room-id" id="roomIdDisplay">------</div>
         </div>
         
-        <!-- Кнопка выхода -->
-        <button class="leave-button" onclick="leaveRoom()">Leave Room</button>
+        <!-- Кнопки в правом верхнем углу -->
+        <div class="top-right-buttons">
+            <button class="leave-seat-button" id="leaveSeatBtn" onclick="leaveSeat()">Leave Seat</button>
+            <button class="leave-button" onclick="leaveRoom()">Leave Game</button>
+        </div>
         
         <!-- Покерный стол -->
         <div class="poker-table">
@@ -448,6 +477,9 @@
         
         console.log('Player info:', { playerId, playerName, playerChips });
         
+        // Переменная для хранения места игрока
+        let currentSeat = null;
+        
         // Функция для занятия места
         function takeSeat(seatNumber) {
             const seatData = {
@@ -543,7 +575,19 @@
                 // Подсвечиваем свое место
                 if (seat.playerId === playerId) {
                     avatar.style.borderColor = '#00ff00';
+                    currentSeat = seatNum;
+                    // Показываем кнопку Leave Seat и скрываем все кнопки SIT
+                    document.body.classList.add('player-seated');
+                    document.getElementById('leaveSeatBtn').classList.add('active');
+                } else {
+                    avatar.style.borderColor = '#ffd700';
                 }
+            }
+            
+            // Если игрок не сидит ни на одном месте
+            if (!currentSeat) {
+                document.body.classList.remove('player-seated');
+                document.getElementById('leaveSeatBtn').classList.remove('active');
             }
         }
         
@@ -565,30 +609,42 @@
             }, 2000);
         }
         
+        // Функция для освобождения места
+        function leaveSeat() {
+            if (!currentSeat) {
+                alert('You are not seated!');
+                return;
+            }
+            
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/seats/${currentSeat}`).remove();
+            } else {
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                if (roomData.seats && roomData.seats[currentSeat]) {
+                    delete roomData.seats[currentSeat];
+                    localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+                    renderSeats(roomData.seats);
+                }
+            }
+            
+            currentSeat = null;
+            document.body.classList.remove('player-seated');
+            document.getElementById('leaveSeatBtn').classList.remove('active');
+        }
+        
         // Функция выхода из комнаты
         function leaveRoom() {
-            if (confirm('Are you sure you want to leave the room?')) {
+            if (confirm('Are you sure you want to leave the game?')) {
                 // Удаляем игрока с места если он сидит
-                if (useFirebase) {
-                    database.ref(`rooms/${roomId}/seats`).once('value', (snapshot) => {
-                        const seats = snapshot.val() || {};
-                        for (let seat in seats) {
-                            if (seats[seat].playerId === playerId) {
-                                database.ref(`rooms/${roomId}/seats/${seat}`).remove();
-                                break;
-                            }
+                if (currentSeat) {
+                    if (useFirebase) {
+                        database.ref(`rooms/${roomId}/seats/${currentSeat}`).remove();
+                    } else {
+                        const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                        if (roomData.seats && roomData.seats[currentSeat]) {
+                            delete roomData.seats[currentSeat];
+                            localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
                         }
-                    });
-                } else {
-                    const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
-                    if (roomData.seats) {
-                        for (let seat in roomData.seats) {
-                            if (roomData.seats[seat].playerId === playerId) {
-                                delete roomData.seats[seat];
-                                break;
-                            }
-                        }
-                        localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
                     }
                 }
                 
