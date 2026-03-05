@@ -534,6 +534,46 @@
         .player-bet.active {
             display: block;
         }
+        
+        /* Карты игрока внизу экрана */
+        .my-hand-container {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 15px;
+            z-index: 90;
+        }
+        
+        .my-hand-container.active {
+            display: flex;
+        }
+        
+        .my-hand-container .playing-card {
+            width: 90px;
+            height: 126px;
+            font-size: 48px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .my-hand-label {
+            position: fixed;
+            bottom: 260px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: rgba(255, 215, 0, 0.9);
+            display: none;
+            z-index: 90;
+        }
+        
+        .my-hand-label.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -698,6 +738,10 @@
             </div>
         </div>
     </div>
+    
+    <!-- Карты игрока -->
+    <div class="my-hand-label" id="myHandLabel">Your Hand</div>
+    <div class="my-hand-container" id="myHandContainer"></div>
     
     <!-- Панель действий игрока -->
     <div class="player-actions" id="playerActions">
@@ -1023,19 +1067,35 @@
             // Раздаем карты игрокам
             dealCardsToPlayers();
             
-            // Синхронизируем через Firebase
+            // Синхронизируем через Firebase (без колоды - она слишком большая)
+            const syncData = {
+                tableCards: gameState.tableCards,
+                pot: gameState.pot,
+                currentBet: gameState.currentBet,
+                currentPlayerIndex: gameState.currentPlayerIndex,
+                stage: gameState.stage,
+                dealerPosition: gameState.dealerPosition,
+                smallBlind: gameState.smallBlind,
+                bigBlind: gameState.bigBlind,
+                activePlayers: gameState.activePlayers,
+                players: {} // Будет заполнено в dealCardsToPlayers
+            };
+            
             if (useFirebase) {
-                database.ref(`rooms/${roomId}/game`).set(gameState);
+                database.ref(`rooms/${roomId}/game`).update(syncData).then(() => {
+                    console.log('Game started, synced to Firebase');
+                });
             } else {
                 const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
-                roomData.game = gameState;
+                roomData.game = {...roomData.game, ...syncData};
                 localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
             }
             
-            // Начинаем раунд ставок
+            // Начинаем раунд ставок после того как все карты розданы
+            const dealTime = gameState.activePlayers.length * 300 + 500;
             setTimeout(() => {
                 startBettingRound();
-            }, 1000);
+            }, dealTime);
         }
         
         // Раздача карт игрокам
@@ -1058,7 +1118,9 @@
                     
                     // Синхронизация
                     if (useFirebase) {
-                        database.ref(`rooms/${roomId}/game/players/${seatNum}`).set(gameState.players[seatNum]);
+                        database.ref(`rooms/${roomId}/game/players/${seatNum}`).set(gameState.players[seatNum]).then(() => {
+                            console.log(`Cards dealt to seat ${seatNum}`);
+                        });
                     }
                 }, index * 300);
             });
@@ -1069,23 +1131,52 @@
             const seatElement = document.querySelector(`.seat-${seatNum}`);
             if (!seatElement) return;
             
-            // Удаляем старые карты если есть
-            let cardsContainer = seatElement.querySelector('.player-cards');
-            if (!cardsContainer) {
-                cardsContainer = document.createElement('div');
-                cardsContainer.className = 'player-cards';
-                seatElement.appendChild(cardsContainer);
-            }
-            cardsContainer.innerHTML = '';
-            
             const playerCards = gameState.players[seatNum]?.cards || [];
             const isCurrentPlayer = parseInt(seatNum) === currentSeat;
             
-            playerCards.forEach(card => {
-                // Показываем карты только текущему игроку, остальным - рубашку
-                const cardElement = renderCard(card, !isCurrentPlayer);
-                cardsContainer.appendChild(cardElement);
-            });
+            console.log(`Rendering cards for seat ${seatNum}, isCurrentPlayer: ${isCurrentPlayer}, cards:`, playerCards);
+            
+            if (isCurrentPlayer) {
+                // Для текущего игрока показываем карты внизу в большем размере
+                const myHandContainer = document.getElementById('myHandContainer');
+                const myHandLabel = document.getElementById('myHandLabel');
+                
+                if (myHandContainer && playerCards.length > 0) {
+                    myHandContainer.innerHTML = '';
+                    playerCards.forEach(card => {
+                        const cardElement = renderCard(card, false);
+                        myHandContainer.appendChild(cardElement);
+                    });
+                    myHandContainer.classList.add('active');
+                    myHandLabel.classList.add('active');
+                }
+                
+                // На месте показываем рубашки карт
+                let cardsContainer = seatElement.querySelector('.player-cards');
+                if (!cardsContainer) {
+                    cardsContainer = document.createElement('div');
+                    cardsContainer.className = 'player-cards';
+                    seatElement.appendChild(cardsContainer);
+                }
+                cardsContainer.innerHTML = '';
+                playerCards.forEach(() => {
+                    const cardElement = renderCard({rank: '', suit: '', color: ''}, true);
+                    cardsContainer.appendChild(cardElement);
+                });
+            } else {
+                // Для других игроков показываем рубашки
+                let cardsContainer = seatElement.querySelector('.player-cards');
+                if (!cardsContainer) {
+                    cardsContainer = document.createElement('div');
+                    cardsContainer.className = 'player-cards';
+                    seatElement.appendChild(cardsContainer);
+                }
+                cardsContainer.innerHTML = '';
+                playerCards.forEach(card => {
+                    const cardElement = renderCard(card, true);
+                    cardsContainer.appendChild(cardElement);
+                });
+            }
         }
         
         // Открытие карт на столе
@@ -1116,6 +1207,8 @@
         
         // Начало раунда ставок
         function startBettingRound() {
+            console.log('Starting betting round, stage:', gameState.stage, 'currentSeat:', currentSeat);
+            
             // Определяем следующего активного игрока
             const activePlayersList = gameState.activePlayers.filter(seat => 
                 !gameState.players[seat]?.folded
@@ -1143,12 +1236,18 @@
             
             // Синхронизация
             if (useFirebase) {
-                database.ref(`rooms/${roomId}/game/currentPlayerIndex`).set(gameState.currentPlayerIndex);
+                database.ref(`rooms/${roomId}/game`).update({
+                    currentPlayerIndex: gameState.currentPlayerIndex,
+                    currentBet: gameState.currentBet,
+                    pot: gameState.pot
+                });
             }
         }
         
         // Показать панель действий игрока
         function showPlayerActions() {
+            console.log('Showing player actions for seat:', currentSeat);
+            
             const actionsPanel = document.getElementById('playerActions');
             actionsPanel.classList.add('active');
             
@@ -1262,7 +1361,11 @@
             
             // Синхронизация
             if (useFirebase) {
-                database.ref(`rooms/${roomId}/game`).set(gameState);
+                database.ref(`rooms/${roomId}/game`).update({
+                    pot: gameState.pot,
+                    currentBet: gameState.currentBet,
+                    currentPlayerIndex: gameState.currentPlayerIndex
+                });
             }
             
             // Переходим к следующему игроку
@@ -1378,6 +1481,17 @@
                 seat.classList.remove('active-turn');
             });
             
+            // Скрываем карты игрока внизу
+            const myHandContainer = document.getElementById('myHandContainer');
+            const myHandLabel = document.getElementById('myHandLabel');
+            if (myHandContainer) {
+                myHandContainer.classList.remove('active');
+                myHandContainer.innerHTML = '';
+            }
+            if (myHandLabel) {
+                myHandLabel.classList.remove('active');
+            }
+            
             hidePlayerActions();
         }
         
@@ -1458,35 +1572,67 @@
         if (useFirebase) {
             database.ref(`rooms/${roomId}/game`).on('value', (snapshot) => {
                 const newGameState = snapshot.val();
-                if (newGameState && newGameState.stage !== 'waiting') {
-                    gameState = newGameState;
+                console.log('Firebase game update received:', newGameState);
+                
+                if (newGameState && newGameState.stage && newGameState.stage !== 'waiting') {
+                    // Обновляем только изменяемые поля, сохраняя deck
+                    const oldDeck = gameState.deck;
+                    gameState = {
+                        ...gameState,
+                        ...newGameState,
+                        deck: oldDeck || [] // Сохраняем локальную колоду или создаем пустую
+                    };
+                    
+                    console.log('Game state updated:', gameState.stage, 'Current seat:', currentSeat);
                     
                     // Обновляем UI
-                    document.getElementById('potAmount').textContent = gameState.pot;
+                    document.getElementById('potAmount').textContent = gameState.pot || 0;
                     document.getElementById('potContainer').style.display = 'block';
                     
                     // Отрисовываем карты на столе
                     const tableCardsContainer = document.getElementById('tableCards');
-                    tableCardsContainer.innerHTML = '';
-                    gameState.tableCards.forEach(card => {
-                        tableCardsContainer.appendChild(renderCard(card));
-                    });
+                    if (gameState.tableCards && gameState.tableCards.length > 0) {
+                        tableCardsContainer.innerHTML = '';
+                        gameState.tableCards.forEach(card => {
+                            tableCardsContainer.appendChild(renderCard(card));
+                        });
+                    }
                     
                     // Отрисовываем карты игроков
-                    Object.keys(gameState.players).forEach(seatNum => {
-                        if (gameState.players[seatNum].cards) {
-                            renderPlayerCards(seatNum);
-                        }
+                    if (gameState.players) {
+                        Object.keys(gameState.players).forEach(seatNum => {
+                            if (gameState.players[seatNum] && gameState.players[seatNum].cards) {
+                                renderPlayerCards(seatNum);
+                            }
+                        });
+                    }
+                    
+                    // Подсвечиваем текущего игрока
+                    document.querySelectorAll('.player-seat').forEach(seat => {
+                        seat.classList.remove('active-turn');
                     });
                     
-                    // Проверяем, наш ли ход
-                    const activePlayersList = gameState.activePlayers.filter(seat => 
-                        !gameState.players[seat]?.folded
-                    );
-                    const currentPlayerSeat = activePlayersList[gameState.currentPlayerIndex % activePlayersList.length];
-                    
-                    if (currentPlayerSeat === currentSeat && gameState.stage !== 'showdown') {
-                        showPlayerActions();
+                    if (gameState.activePlayers && gameState.activePlayers.length > 0) {
+                        const activePlayersList = gameState.activePlayers.filter(seat => 
+                            !gameState.players[seat]?.folded
+                        );
+                        
+                        if (activePlayersList.length > 0) {
+                            const currentPlayerSeat = activePlayersList[gameState.currentPlayerIndex % activePlayersList.length];
+                            
+                            // Подсвечиваем текущего игрока
+                            const currentSeatElement = document.querySelector(`.seat-${currentPlayerSeat}`);
+                            if (currentSeatElement) {
+                                currentSeatElement.classList.add('active-turn');
+                            }
+                            
+                            // Если это наш ход, показываем кнопки действий
+                            if (currentPlayerSeat === currentSeat && gameState.stage !== 'showdown') {
+                                showPlayerActions();
+                            } else {
+                                hidePlayerActions();
+                            }
+                        }
                     }
                 }
             });
