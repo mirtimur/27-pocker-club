@@ -298,6 +298,242 @@
         body.player-seated .sit-button {
             display: none !important;
         }
+        
+        /* Карты */
+        .playing-card {
+            width: 60px;
+            height: 84px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            position: relative;
+            transition: transform 0.3s;
+        }
+        
+        .playing-card.back {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: transparent;
+        }
+        
+        .playing-card.back::before {
+            content: '🂠';
+            font-size: 48px;
+            color: white;
+        }
+        
+        .playing-card.red {
+            color: #dc2626;
+        }
+        
+        .playing-card.black {
+            color: #000;
+        }
+        
+        /* Карты на столе */
+        .table-cards {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 10px;
+            z-index: 2;
+            margin-top: 60px;
+        }
+        
+        /* Банк в центре стола */
+        .pot-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: -40px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            z-index: 2;
+            border: 2px solid #ffd700;
+        }
+        
+        .pot-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        /* Карты игрока */
+        .player-cards {
+            position: absolute;
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        /* Кнопки действий игрока */
+        .player-actions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 12px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 16px 24px;
+            border-radius: 12px;
+            z-index: 100;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .player-actions.active {
+            display: flex;
+        }
+        
+        .action-button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid;
+            min-width: 100px;
+        }
+        
+        .action-button.fold {
+            background: rgba(220, 38, 38, 0.2);
+            border-color: rgba(220, 38, 38, 0.6);
+            color: #fff;
+        }
+        
+        .action-button.fold:hover {
+            background: rgba(220, 38, 38, 0.4);
+            border-color: #dc2626;
+        }
+        
+        .action-button.check {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.6);
+            color: #fff;
+        }
+        
+        .action-button.check:hover {
+            background: rgba(59, 130, 246, 0.4);
+            border-color: #3b82f6;
+        }
+        
+        .action-button.call {
+            background: rgba(234, 179, 8, 0.2);
+            border-color: rgba(234, 179, 8, 0.6);
+            color: #fff;
+        }
+        
+        .action-button.call:hover {
+            background: rgba(234, 179, 8, 0.4);
+            border-color: #eab308;
+        }
+        
+        .action-button.raise {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.6);
+            color: #fff;
+        }
+        
+        .action-button.raise:hover {
+            background: rgba(34, 197, 94, 0.4);
+            border-color: #22c55e;
+        }
+        
+        .bet-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .bet-input {
+            width: 120px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 215, 0, 0.6);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .bet-input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        
+        /* Индикатор текущего игрока */
+        .player-seat.active-turn .player-info {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+            }
+        }
+        
+        /* Анимация раздачи карт */
+        @keyframes dealCard {
+            from {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .card-dealing {
+            animation: dealCard 0.3s ease-out;
+        }
+        
+        /* Анимация фишек */
+        @keyframes moveChips {
+            from {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            to {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+        
+        .chips-moving {
+            animation: moveChips 0.5s ease-out forwards;
+        }
+        
+        /* Текущая ставка игрока */
+        .player-bet {
+            position: absolute;
+            top: -30px;
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .player-bet.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -321,6 +557,14 @@
                 <div class="table-logo">27 POKER CLUB</div>
                 <div class="table-subtitle">Texas Hold'em</div>
             </div>
+            
+            <!-- Банк -->
+            <div class="pot-container" id="potContainer" style="display: none;">
+                <div class="pot-amount" id="potAmount">0</div>
+            </div>
+            
+            <!-- Карты на столе -->
+            <div class="table-cards" id="tableCards"></div>
             
             <!-- Места для игроков (10 мест) -->
             <div class="player-seat seat-1" data-seat="1">
@@ -452,6 +696,17 @@
                     <div class="player-chips">2000</div>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Панель действий игрока -->
+    <div class="player-actions" id="playerActions">
+        <button class="action-button fold" onclick="playerAction('fold')">Fold</button>
+        <button class="action-button check" id="checkBtn" onclick="playerAction('check')">Check</button>
+        <button class="action-button call" id="callBtn" style="display: none;" onclick="playerAction('call')">Call <span id="callAmount"></span></button>
+        <div class="bet-input-group">
+            <input type="number" class="bet-input" id="betInput" placeholder="Bet" min="0" />
+            <button class="action-button raise" onclick="playerAction('raise')">Raise</button>
         </div>
     </div>
     
@@ -683,6 +938,550 @@
                 window.location.href = `room.html?id=${roomId}`;
             }
         }
-    </script>
-</body>
-</html>
+        
+        // ==================== POKER GAME LOGIC ====================
+        
+        // Константы игры
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const SUIT_COLORS = {'♠': 'black', '♣': 'black', '♥': 'red', '♦': 'red'};
+        
+        // Состояние игры
+        let gameState = {
+            deck: [],
+            tableCards: [],
+            players: {},
+            pot: 0,
+            currentBet: 0,
+            currentPlayerIndex: 0,
+            stage: 'waiting', // waiting, preflop, flop, turn, river, showdown
+            dealerPosition: 0,
+            smallBlind: 10,
+            bigBlind: 20,
+            activePlayers: []
+        };
+        
+        // Создание колоды
+        function createDeck() {
+            const deck = [];
+            for (let suit of SUITS) {
+                for (let rank of RANKS) {
+                    deck.push({ rank, suit, color: SUIT_COLORS[suit] });
+                }
+            }
+            return deck;
+        }
+        
+        // Тасование колоды (Fisher-Yates shuffle - полностью случайное)
+        function shuffleDeck(deck) {
+            const shuffled = [...deck];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
+        // Отрисовка карты
+        function renderCard(card, isBack = false) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = `playing-card ${isBack ? 'back' : card.color} card-dealing`;
+            if (!isBack) {
+                cardDiv.textContent = card.rank + card.suit;
+            }
+            return cardDiv;
+        }
+        
+        // Начало игры
+        function startPokerGame() {
+            // Проверяем, что есть хотя бы 2 игрока
+            const seatedPlayers = Object.keys(gameState.players).filter(seat => gameState.players[seat]);
+            if (seatedPlayers.length < 2) {
+                alert('Need at least 2 players to start!');
+                return;
+            }
+            
+            // Инициализация игры
+            gameState.deck = shuffleDeck(createDeck());
+            gameState.tableCards = [];
+            gameState.pot = 0;
+            gameState.currentBet = gameState.bigBlind;
+            gameState.stage = 'preflop';
+            gameState.activePlayers = seatedPlayers.map(seat => parseInt(seat));
+            
+            // Очищаем карты на столе
+            document.getElementById('tableCards').innerHTML = '';
+            document.getElementById('potContainer').style.display = 'block';
+            document.getElementById('potAmount').textContent = '0';
+            
+            // Раздаем карты игрокам
+            dealCardsToPlayers();
+            
+            // Синхронизируем через Firebase
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/game`).set(gameState);
+            } else {
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                roomData.game = gameState;
+                localStorage.setItem(`room_${roomId}`, JSON.stringify(roomData));
+            }
+            
+            // Начинаем раунд ставок
+            setTimeout(() => {
+                startBettingRound();
+            }, 1000);
+        }
+        
+        // Раздача карт игрокам
+        function dealCardsToPlayers() {
+            gameState.activePlayers.forEach((seatNum, index) => {
+                setTimeout(() => {
+                    // Берем 2 карты из колоды
+                    const card1 = gameState.deck.pop();
+                    const card2 = gameState.deck.pop();
+                    
+                    if (!gameState.players[seatNum]) {
+                        gameState.players[seatNum] = {};
+                    }
+                    gameState.players[seatNum].cards = [card1, card2];
+                    gameState.players[seatNum].bet = 0;
+                    gameState.players[seatNum].folded = false;
+                    
+                    // Отрисовываем карты
+                    renderPlayerCards(seatNum);
+                    
+                    // Синхронизация
+                    if (useFirebase) {
+                        database.ref(`rooms/${roomId}/game/players/${seatNum}`).set(gameState.players[seatNum]);
+                    }
+                }, index * 300);
+            });
+        }
+        
+        // Отрисовка карт игрока
+        function renderPlayerCards(seatNum) {
+            const seatElement = document.querySelector(`.seat-${seatNum}`);
+            if (!seatElement) return;
+            
+            // Удаляем старые карты если есть
+            let cardsContainer = seatElement.querySelector('.player-cards');
+            if (!cardsContainer) {
+                cardsContainer = document.createElement('div');
+                cardsContainer.className = 'player-cards';
+                seatElement.appendChild(cardsContainer);
+            }
+            cardsContainer.innerHTML = '';
+            
+            const playerCards = gameState.players[seatNum]?.cards || [];
+            const isCurrentPlayer = parseInt(seatNum) === currentSeat;
+            
+            playerCards.forEach(card => {
+                // Показываем карты только текущему игроку, остальным - рубашку
+                const cardElement = renderCard(card, !isCurrentPlayer);
+                cardsContainer.appendChild(cardElement);
+            });
+        }
+        
+        // Открытие карт на столе
+        function revealTableCards(count) {
+            const tableCardsContainer = document.getElementById('tableCards');
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const card = gameState.deck.pop();
+                    gameState.tableCards.push(card);
+                    
+                    const cardElement = renderCard(card);
+                    tableCardsContainer.appendChild(cardElement);
+                    
+                    // Синхронизация
+                    if (useFirebase) {
+                        database.ref(`rooms/${roomId}/game/tableCards`).set(gameState.tableCards);
+                    }
+                }, i * 300);
+            }
+            
+            // После открытия карт начинаем новый раунд ставок
+            setTimeout(() => {
+                gameState.currentBet = 0;
+                startBettingRound();
+            }, count * 300 + 500);
+        }
+        
+        // Начало раунда ставок
+        function startBettingRound() {
+            // Определяем следующего активного игрока
+            const activePlayersList = gameState.activePlayers.filter(seat => 
+                !gameState.players[seat]?.folded
+            );
+            
+            if (activePlayersList.length === 1) {
+                // Все спасовали, победитель
+                endHand(activePlayersList[0]);
+                return;
+            }
+            
+            // Находим текущего игрока
+            const currentPlayerSeat = activePlayersList[gameState.currentPlayerIndex % activePlayersList.length];
+            
+            // Подсвечиваем текущего игрока
+            document.querySelectorAll('.player-seat').forEach(seat => {
+                seat.classList.remove('active-turn');
+            });
+            document.querySelector(`.seat-${currentPlayerSeat}`)?.classList.add('active-turn');
+            
+            // Если это текущий игрок, показываем кнопки действий
+            if (currentPlayerSeat === currentSeat) {
+                showPlayerActions();
+            }
+            
+            // Синхронизация
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/game/currentPlayerIndex`).set(gameState.currentPlayerIndex);
+            }
+        }
+        
+        // Показать панель действий игрока
+        function showPlayerActions() {
+            const actionsPanel = document.getElementById('playerActions');
+            actionsPanel.classList.add('active');
+            
+            const checkBtn = document.getElementById('checkBtn');
+            const callBtn = document.getElementById('callBtn');
+            const betInput = document.getElementById('betInput');
+            
+            // Определяем, какие действия доступны
+            const playerBet = gameState.players[currentSeat]?.bet || 0;
+            const callAmount = gameState.currentBet - playerBet;
+            
+            if (callAmount === 0) {
+                // Можно чекать
+                checkBtn.style.display = 'block';
+                callBtn.style.display = 'none';
+            } else {
+                // Нужно коллировать
+                checkBtn.style.display = 'none';
+                callBtn.style.display = 'block';
+                document.getElementById('callAmount').textContent = callAmount;
+            }
+            
+            // Устанавливаем минимальный рейз
+            const playerChips = parseInt(sessionStorage.getItem(`playerChips_${roomId}`)) || 0;
+            const minRaise = gameState.currentBet * 2;
+            betInput.min = minRaise;
+            betInput.max = playerChips;
+            betInput.value = minRaise;
+        }
+        
+        // Скрыть панель действий
+        function hidePlayerActions() {
+            document.getElementById('playerActions').classList.remove('active');
+        }
+        
+        // Действие игрока
+        function playerAction(action) {
+            const playerChips = parseInt(sessionStorage.getItem(`playerChips_${roomId}`)) || 0;
+            const playerBet = gameState.players[currentSeat]?.bet || 0;
+            
+            switch (action) {
+                case 'fold':
+                    // Пас - сбрасываем карты
+                    gameState.players[currentSeat].folded = true;
+                    
+                    // Анимация сброса карт
+                    const cardsContainer = document.querySelector(`.seat-${currentSeat} .player-cards`);
+                    if (cardsContainer) {
+                        cardsContainer.style.opacity = '0.3';
+                    }
+                    break;
+                    
+                case 'check':
+                    // Чек - переход хода без ставки
+                    break;
+                    
+                case 'call':
+                    // Колл - уравнять ставку
+                    const callAmount = gameState.currentBet - playerBet;
+                    if (callAmount > playerChips) {
+                        alert('Not enough chips!');
+                        return;
+                    }
+                    
+                    gameState.players[currentSeat].bet = gameState.currentBet;
+                    gameState.pot += callAmount;
+                    
+                    // Обновляем фишки игрока
+                    const newChips = playerChips - callAmount;
+                    sessionStorage.setItem(`playerChips_${roomId}`, newChips);
+                    updatePlayerChipsDisplay(currentSeat, newChips);
+                    
+                    // Анимация фишек
+                    animateChipsToCenter(currentSeat, callAmount);
+                    break;
+                    
+                case 'raise':
+                    // Рейз - повышение ставки
+                    const raiseAmount = parseInt(document.getElementById('betInput').value);
+                    
+                    if (raiseAmount < gameState.currentBet * 2) {
+                        alert('Raise must be at least 2x current bet!');
+                        return;
+                    }
+                    
+                    if (raiseAmount > playerChips) {
+                        alert('Not enough chips!');
+                        return;
+                    }
+                    
+                    const totalBet = raiseAmount;
+                    gameState.currentBet = totalBet;
+                    gameState.players[currentSeat].bet = totalBet;
+                    gameState.pot += totalBet;
+                    
+                    // Обновляем фишки игрока
+                    const newChipsAfterRaise = playerChips - totalBet;
+                    sessionStorage.setItem(`playerChips_${roomId}`, newChipsAfterRaise);
+                    updatePlayerChipsDisplay(currentSeat, newChipsAfterRaise);
+                    
+                    // Анимация фишек
+                    animateChipsToCenter(currentSeat, totalBet);
+                    break;
+            }
+            
+            // Обновляем банк
+            document.getElementById('potAmount').textContent = gameState.pot;
+            
+            // Скрываем панель действий
+            hidePlayerActions();
+            
+            // Синхронизация
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/game`).set(gameState);
+            }
+            
+            // Переходим к следующему игроку
+            nextPlayer();
+        }
+        
+        // Переход к следующему игроку
+        function nextPlayer() {
+            gameState.currentPlayerIndex++;
+            
+            // Проверяем, закончился ли раунд ставок
+            const activePlayersList = gameState.activePlayers.filter(seat => 
+                !gameState.players[seat]?.folded
+            );
+            
+            const allBetsEqual = activePlayersList.every(seat => 
+                gameState.players[seat]?.bet === gameState.currentBet
+            );
+            
+            if (allBetsEqual && gameState.currentPlayerIndex >= activePlayersList.length) {
+                // Раунд ставок закончен, переходим к следующему этапу
+                gameState.currentPlayerIndex = 0;
+                nextStage();
+            } else {
+                // Продолжаем раунд ставок
+                startBettingRound();
+            }
+        }
+        
+        // Следующий этап игры
+        function nextStage() {
+            switch (gameState.stage) {
+                case 'preflop':
+                    gameState.stage = 'flop';
+                    revealTableCards(3); // Флоп - 3 карты
+                    break;
+                case 'flop':
+                    gameState.stage = 'turn';
+                    revealTableCards(1); // Терн - 1 карта
+                    break;
+                case 'turn':
+                    gameState.stage = 'river';
+                    revealTableCards(1); // Ривер - 1 карта
+                    break;
+                case 'river':
+                    gameState.stage = 'showdown';
+                    showdown(); // Вскрытие карт и определение победителя
+                    break;
+            }
+            
+            // Синхронизация
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/game/stage`).set(gameState.stage);
+            }
+        }
+        
+        // Вскрытие карт
+        function showdown() {
+            // Показываем все карты игроков
+            gameState.activePlayers.forEach(seat => {
+                if (!gameState.players[seat]?.folded) {
+                    renderPlayerCards(seat);
+                }
+            });
+            
+            // Здесь будет логика определения победителя
+            // Пока просто показываем сообщение
+            setTimeout(() => {
+                alert('Hand complete! Winner determination coming soon...');
+                resetGame();
+            }, 2000);
+        }
+        
+        // Завершение раздачи (один победитель)
+        function endHand(winnerSeat) {
+            // Победитель забирает банк
+            const winnerChips = parseInt(sessionStorage.getItem(`playerChips_${roomId}`)) || 0;
+            const newChips = winnerChips + gameState.pot;
+            
+            if (winnerSeat === currentSeat) {
+                sessionStorage.setItem(`playerChips_${roomId}`, newChips);
+            }
+            
+            updatePlayerChipsDisplay(winnerSeat, newChips);
+            
+            alert(`Player at seat ${winnerSeat} wins ${gameState.pot} chips!`);
+            
+            setTimeout(() => {
+                resetGame();
+            }, 2000);
+        }
+        
+        // Сброс игры для новой раздачи
+        function resetGame() {
+            gameState = {
+                deck: [],
+                tableCards: [],
+                players: {},
+                pot: 0,
+                currentBet: 0,
+                currentPlayerIndex: 0,
+                stage: 'waiting',
+                dealerPosition: 0,
+                smallBlind: 10,
+                bigBlind: 20,
+                activePlayers: []
+            };
+            
+            document.getElementById('tableCards').innerHTML = '';
+            document.getElementById('potContainer').style.display = 'none';
+            document.querySelectorAll('.player-cards').forEach(cards => cards.remove());
+            document.querySelectorAll('.player-seat').forEach(seat => {
+                seat.classList.remove('active-turn');
+            });
+            
+            hidePlayerActions();
+        }
+        
+        // Обновление отображения фишек игрока
+        function updatePlayerChipsDisplay(seatNum, chips) {
+            const seatElement = document.querySelector(`.seat-${seatNum}`);
+            if (!seatElement) return;
+            
+            const chipsElement = seatElement.querySelector('.player-chips');
+            if (chipsElement) {
+                chipsElement.textContent = chips;
+            }
+        }
+        
+        // Анимация движения фишек в центр
+        function animateChipsToCenter(seatNum, amount) {
+            const seatElement = document.querySelector(`.seat-${seatNum}`);
+            if (!seatElement) return;
+            
+            // Создаем элемент фишек
+            const chipsElement = document.createElement('div');
+            chipsElement.className = 'player-bet active';
+            chipsElement.textContent = amount;
+            seatElement.appendChild(chipsElement);
+            
+            // Удаляем через 2 секунды
+            setTimeout(() => {
+                chipsElement.remove();
+            }, 2000);
+        }
+        
+        // Подключение кнопки Start Game
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            // Проверяем, что игрок сидит за столом
+            if (!currentSeat) {
+                alert('You need to take a seat first!');
+                return;
+            }
+            
+            // Получаем всех сидящих игроков
+            if (useFirebase) {
+                database.ref(`rooms/${roomId}/seats`).once('value', (snapshot) => {
+                    const seats = snapshot.val() || {};
+                    gameState.players = {};
+                    
+                    Object.keys(seats).forEach(seatNum => {
+                        gameState.players[seatNum] = {
+                            name: seats[seatNum].name,
+                            chips: seats[seatNum].chips,
+                            cards: [],
+                            bet: 0,
+                            folded: false
+                        };
+                    });
+                    
+                    startPokerGame();
+                });
+            } else {
+                const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
+                const seats = roomData.seats || {};
+                gameState.players = {};
+                
+                Object.keys(seats).forEach(seatNum => {
+                    gameState.players[seatNum] = {
+                        name: seats[seatNum].name,
+                        chips: seats[seatNum].chips,
+                        cards: [],
+                        bet: 0,
+                        folded: false
+                    };
+                });
+                
+                startPokerGame();
+            }
+        });
+        
+        // Слушатель изменений игры через Firebase
+        if (useFirebase) {
+            database.ref(`rooms/${roomId}/game`).on('value', (snapshot) => {
+                const newGameState = snapshot.val();
+                if (newGameState && newGameState.stage !== 'waiting') {
+                    gameState = newGameState;
+                    
+                    // Обновляем UI
+                    document.getElementById('potAmount').textContent = gameState.pot;
+                    document.getElementById('potContainer').style.display = 'block';
+                    
+                    // Отрисовываем карты на столе
+                    const tableCardsContainer = document.getElementById('tableCards');
+                    tableCardsContainer.innerHTML = '';
+                    gameState.tableCards.forEach(card => {
+                        tableCardsContainer.appendChild(renderCard(card));
+                    });
+                    
+                    // Отрисовываем карты игроков
+                    Object.keys(gameState.players).forEach(seatNum => {
+                        if (gameState.players[seatNum].cards) {
+                            renderPlayerCards(seatNum);
+                        }
+                    });
+                    
+                    // Проверяем, наш ли ход
+                    const activePlayersList = gameState.activePlayers.filter(seat => 
+                        !gameState.players[seat]?.folded
+                    );
+                    const currentPlayerSeat = activePlayersList[gameState.currentPlayerIndex % activePlayersList.length];
+                    
+                    if (currentPlayerSeat === currentSeat && gameState.stage !== 'showdown') {
+                        showPlayerActions();
+                    }
+                }
+            });
+        }
