@@ -721,7 +721,13 @@
         }
         
         // Отображаем ID комнаты
-        document.getElementById('roomIdDisplay').textContent = roomId;
+        const roomIdDisplay = document.getElementById('roomIdDisplay');
+        if (roomIdDisplay && roomId) {
+            roomIdDisplay.textContent = roomId;
+            console.log('Room ID set to:', roomId);
+        } else {
+            console.error('Failed to set room ID:', { roomIdDisplay, roomId });
+        }
         
         // Firebase Configuration
         const firebaseConfig = {
