@@ -405,6 +405,18 @@
             min-width: 100px;
         }
         
+        .action-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(50%);
+        }
+        
+        .action-button:disabled:hover {
+            background: inherit;
+            border-color: inherit;
+            transform: none;
+        }
+        
         .action-button.fold {
             background: rgba(220, 38, 38, 0.2);
             border-color: rgba(220, 38, 38, 0.6);
@@ -470,6 +482,11 @@
         .bet-input:focus {
             outline: none;
             border-color: #ffd700;
+        }
+        
+        .bet-input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
         
         /* Индикатор текущего игрока */
@@ -1093,6 +1110,14 @@
             
             // Начинаем раунд ставок после того как все карты розданы
             const dealTime = gameState.activePlayers.length * 300 + 500;
+            
+            // Показываем кнопки действий сразу для всех игроков за столом
+            setTimeout(() => {
+                if (currentSeat && gameState.activePlayers.includes(currentSeat)) {
+                    showPlayerActions();
+                }
+            }, 500);
+            
             setTimeout(() => {
                 startBettingRound();
             }, dealTime);
@@ -1229,10 +1254,8 @@
             });
             document.querySelector(`.seat-${currentPlayerSeat}`)?.classList.add('active-turn');
             
-            // Если это текущий игрок, показываем кнопки действий
-            if (currentPlayerSeat === currentSeat) {
-                showPlayerActions();
-            }
+            // Обновляем состояние кнопок действий (включаем/выключаем в зависимости от хода)
+            updatePlayerActionsState(currentPlayerSeat === currentSeat);
             
             // Синхронизация
             if (useFirebase) {
@@ -1249,11 +1272,41 @@
             console.log('Showing player actions for seat:', currentSeat);
             
             const actionsPanel = document.getElementById('playerActions');
-            actionsPanel.classList.add('active');
-            
+            if (actionsPanel) {
+                actionsPanel.classList.add('active');
+            }
+        }
+        
+        // Скрыть панель действий
+        function hidePlayerActions() {
+            const actionsPanel = document.getElementById('playerActions');
+            if (actionsPanel) {
+                actionsPanel.classList.remove('active');
+            }
+        }
+        
+        // Обновить состояние кнопок действий (включить/выключить)
+        function updatePlayerActionsState(isMyTurn) {
+            const foldBtn = document.querySelector('.action-button.fold');
             const checkBtn = document.getElementById('checkBtn');
             const callBtn = document.getElementById('callBtn');
+            const raiseBtn = document.querySelector('.action-button.raise');
             const betInput = document.getElementById('betInput');
+            
+            // Если не наш ход, делаем кнопки неактивными
+            if (!isMyTurn) {
+                if (foldBtn) foldBtn.disabled = true;
+                if (checkBtn) checkBtn.disabled = true;
+                if (callBtn) callBtn.disabled = true;
+                if (raiseBtn) raiseBtn.disabled = true;
+                if (betInput) betInput.disabled = true;
+                return;
+            }
+            
+            // Наш ход - активируем кнопки
+            if (foldBtn) foldBtn.disabled = false;
+            if (raiseBtn) raiseBtn.disabled = false;
+            if (betInput) betInput.disabled = false;
             
             // Определяем, какие действия доступны
             const playerBet = gameState.players[currentSeat]?.bet || 0;
@@ -1261,26 +1314,29 @@
             
             if (callAmount === 0) {
                 // Можно чекать
-                checkBtn.style.display = 'block';
-                callBtn.style.display = 'none';
+                if (checkBtn) {
+                    checkBtn.style.display = 'block';
+                    checkBtn.disabled = false;
+                }
+                if (callBtn) callBtn.style.display = 'none';
             } else {
                 // Нужно коллировать
-                checkBtn.style.display = 'none';
-                callBtn.style.display = 'block';
-                document.getElementById('callAmount').textContent = callAmount;
+                if (checkBtn) checkBtn.style.display = 'none';
+                if (callBtn) {
+                    callBtn.style.display = 'block';
+                    callBtn.disabled = false;
+                    document.getElementById('callAmount').textContent = callAmount;
+                }
             }
             
             // Устанавливаем минимальный рейз
             const playerChips = parseInt(sessionStorage.getItem(`playerChips_${roomId}`)) || 0;
             const minRaise = gameState.currentBet * 2;
-            betInput.min = minRaise;
-            betInput.max = playerChips;
-            betInput.value = minRaise;
-        }
-        
-        // Скрыть панель действий
-        function hidePlayerActions() {
-            document.getElementById('playerActions').classList.remove('active');
+            if (betInput) {
+                betInput.min = minRaise;
+                betInput.max = playerChips;
+                betInput.value = minRaise;
+            }
         }
         
         // Действие игрока
@@ -1600,9 +1656,11 @@
                     
                     // Отрисовываем карты игроков
                     if (gameState.players) {
+                        console.log('Rendering cards for all players, currentSeat:', currentSeat);
                         Object.keys(gameState.players).forEach(seatNum => {
                             if (gameState.players[seatNum] && gameState.players[seatNum].cards) {
-                                renderPlayerCards(seatNum);
+                                console.log(`Player at seat ${seatNum} has cards:`, gameState.players[seatNum].cards);
+                                renderPlayerCards(parseInt(seatNum));
                             }
                         });
                     }
@@ -1626,11 +1684,11 @@
                                 currentSeatElement.classList.add('active-turn');
                             }
                             
-                            // Если это наш ход, показываем кнопки действий
-                            if (currentPlayerSeat === currentSeat && gameState.stage !== 'showdown') {
+                            // Показываем панель действий если игрок за столом
+                            if (currentSeat && gameState.activePlayers.includes(currentSeat) && gameState.stage !== 'showdown') {
                                 showPlayerActions();
-                            } else {
-                                hidePlayerActions();
+                                // Обновляем состояние кнопок (активные только в наш ход)
+                                updatePlayerActionsState(currentPlayerSeat === currentSeat);
                             }
                         }
                     }
