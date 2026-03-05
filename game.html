@@ -929,6 +929,7 @@
                 if (seat.playerId === playerId) {
                     avatar.style.borderColor = '#00ff00';
                     currentSeat = seatNum;
+                    console.log(`Current player seated at: ${seatNum} (type: ${typeof seatNum}), currentSeat set to:`, currentSeat);
                     // Показываем кнопку Leave Seat и скрываем все кнопки SIT
                     document.body.classList.add('player-seated');
                     document.getElementById('leaveSeatBtn').classList.add('active');
@@ -1081,7 +1082,8 @@
             gameState.pot = 0;
             gameState.currentBet = gameState.bigBlind;
             gameState.stage = 'preflop';
-            gameState.activePlayers = seatedPlayers.map(seat => parseInt(seat));
+            // Оставляем activePlayers как строки, чтобы соответствовать ключам в gameState.players
+            gameState.activePlayers = seatedPlayers;
             
             console.log('Game initialized:', {
                 stage: gameState.stage,
@@ -1150,10 +1152,11 @@
         function dealCardsToPlayers() {
             console.log('=== dealCardsToPlayers called ===');
             console.log('Active players:', gameState.activePlayers);
+            console.log('Current gameState.players:', gameState.players);
             
             gameState.activePlayers.forEach((seatNum, index) => {
                 setTimeout(() => {
-                    console.log(`Dealing cards to seat ${seatNum}...`);
+                    console.log(`Dealing cards to seat ${seatNum} (type: ${typeof seatNum})...`);
                     
                     // Берем 2 карты из колоды
                     const card1 = gameState.deck.pop();
@@ -1161,21 +1164,36 @@
                     
                     console.log(`Cards for seat ${seatNum}:`, card1, card2);
                     
-                    if (!gameState.players[seatNum]) {
-                        gameState.players[seatNum] = {};
-                    }
-                    gameState.players[seatNum].cards = [card1, card2];
-                    gameState.players[seatNum].bet = 0;
-                    gameState.players[seatNum].folded = false;
+                    // Проверяем оба варианта: строка и число
+                    const seatKey = String(seatNum);
                     
-                    console.log(`About to render cards for seat ${seatNum}, currentSeat=${currentSeat}`);
+                    if (!gameState.players[seatKey]) {
+                        console.error(`Player at seat ${seatKey} not found! Creating empty object.`);
+                        gameState.players[seatKey] = {
+                            name: 'Unknown',
+                            chips: 2000
+                        };
+                    }
+                    
+                    console.log(`Player before updating cards:`, gameState.players[seatKey]);
+                    
+                    // Обновляем только карты и статус игры (НЕ перезаписываем name и chips!)
+                    gameState.players[seatKey].cards = [card1, card2];
+                    gameState.players[seatKey].bet = 0;
+                    gameState.players[seatKey].folded = false;
+                    
+                    console.log(`Player after updating cards:`, gameState.players[seatKey]);
+                    console.log(`About to render cards for seat ${seatNum}, currentSeat=${currentSeat} (type: ${typeof currentSeat})`);
+                    
                     // Отрисовываем карты
-                    renderPlayerCards(seatNum);
+                    renderPlayerCards(seatNum);  // Передаем строку, т.к. seatNum это ключ из gameState.players
                     
                     // Синхронизация
                     if (useFirebase) {
-                        database.ref(`rooms/${roomId}/game/players/${seatNum}`).set(gameState.players[seatNum]).then(() => {
-                            console.log(`Cards dealt to seat ${seatNum} - synced to Firebase`);
+                        database.ref(`rooms/${roomId}/game/players/${seatKey}`).set(gameState.players[seatKey]).then(() => {
+                            console.log(`Cards dealt to seat ${seatKey} - synced to Firebase`);
+                        }).catch(err => {
+                            console.error(`Failed to sync cards for seat ${seatKey}:`, err);
                         });
                     }
                 }, index * 300);
@@ -1184,7 +1202,7 @@
         
         // Отрисовка карт игрока
         function renderPlayerCards(seatNum) {
-            console.log(`=== renderPlayerCards called for seat ${seatNum} ===`);
+            console.log(`=== renderPlayerCards called for seat ${seatNum} (type: ${typeof seatNum}) ===`);
             
             const seatElement = document.querySelector(`.seat-${seatNum}`);
             if (!seatElement) {
@@ -1192,10 +1210,14 @@
                 return;
             }
             
-            const playerCards = gameState.players[seatNum]?.cards || [];
-            const isCurrentPlayer = parseInt(seatNum) === currentSeat;
+            // Проверяем оба варианта: строка и число
+            const seatKey = String(seatNum);
+            const playerCards = gameState.players[seatKey]?.cards || [];
+            // Сравниваем строки для надёжности
+            const isCurrentPlayer = String(seatNum) === String(currentSeat);
             
-            console.log(`Seat ${seatNum}: isCurrentPlayer=${isCurrentPlayer}, currentSeat=${currentSeat}, cards:`, playerCards);
+            console.log(`Seat ${seatNum}: isCurrentPlayer=${isCurrentPlayer}, currentSeat=${currentSeat} (${typeof currentSeat}), seatNum=${seatNum} (${typeof seatNum})`);
+            console.log('Cards:', playerCards);
             
             if (isCurrentPlayer) {
                 console.log('This is current player - showing cards at bottom');
@@ -1301,6 +1323,7 @@
             document.querySelector(`.seat-${currentPlayerSeat}`)?.classList.add('active-turn');
             
             // Обновляем состояние кнопок действий (включаем/выключаем в зависимости от хода)
+            console.log(`Comparing currentPlayerSeat (${currentPlayerSeat}, type: ${typeof currentPlayerSeat}) === currentSeat (${currentSeat}, type: ${typeof currentSeat}): ${currentPlayerSeat === currentSeat}`);
             updatePlayerActionsState(currentPlayerSeat === currentSeat);
             
             // Синхронизация
@@ -1723,7 +1746,7 @@
                         Object.keys(gameState.players).forEach(seatNum => {
                             if (gameState.players[seatNum] && gameState.players[seatNum].cards) {
                                 console.log(`Player at seat ${seatNum} has cards:`, gameState.players[seatNum].cards);
-                                renderPlayerCards(parseInt(seatNum));
+                                renderPlayerCards(seatNum);  // Передаем строку
                             }
                         });
                     }
