@@ -277,6 +277,23 @@
             border-color: #eab308;
         }
         
+        .start-game-button {
+            background: rgba(34, 197, 94, 0.2);
+            border: 2px solid rgba(34, 197, 94, 0.6);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .start-game-button:hover {
+            background: rgba(34, 197, 94, 0.4);
+            border-color: #22c55e;
+        }
+        
         /* Скрываем все кнопки SIT когда игрок сидит */
         body.player-seated .sit-button {
             display: none !important;
@@ -292,6 +309,7 @@
         
         <!-- Кнопки в правом верхнем углу -->
         <div class="top-right-buttons">
+            <button class="start-game-button" id="startGameBtn">Start Game</button>
             <button class="leave-seat-button" id="leaveSeatBtn" onclick="leaveSeat()">Leave Seat</button>
             <button class="leave-button" onclick="leaveRoom()">Leave Game</button>
         </div>
