@@ -1061,8 +1061,13 @@
         
         // Начало игры
         function startPokerGame() {
+            console.log('=== startPokerGame called ===');
+            console.log('gameState.players:', gameState.players);
+            
             // Проверяем, что есть хотя бы 2 игрока
             const seatedPlayers = Object.keys(gameState.players).filter(seat => gameState.players[seat]);
+            console.log('Seated players:', seatedPlayers);
+            
             if (seatedPlayers.length < 2) {
                 alert('Need at least 2 players to start!');
                 return;
@@ -1070,17 +1075,27 @@
             
             // Инициализация игры
             gameState.deck = shuffleDeck(createDeck());
+            console.log('Deck created and shuffled, cards:', gameState.deck.length);
+            
             gameState.tableCards = [];
             gameState.pot = 0;
             gameState.currentBet = gameState.bigBlind;
             gameState.stage = 'preflop';
             gameState.activePlayers = seatedPlayers.map(seat => parseInt(seat));
             
+            console.log('Game initialized:', {
+                stage: gameState.stage,
+                pot: gameState.pot,
+                currentBet: gameState.currentBet,
+                activePlayers: gameState.activePlayers
+            });
+            
             // Очищаем карты на столе
             document.getElementById('tableCards').innerHTML = '';
             document.getElementById('potContainer').style.display = 'block';
             document.getElementById('potAmount').textContent = '0';
             
+            console.log('Starting to deal cards...');
             // Раздаем карты игрокам
             dealCardsToPlayers();
             
@@ -1112,24 +1127,39 @@
             const dealTime = gameState.activePlayers.length * 300 + 500;
             
             // Показываем кнопки действий сразу для всех игроков за столом
+            console.log('Setting timeout to show player actions...');
             setTimeout(() => {
+                console.log('Timeout fired - checking if should show actions');
+                console.log('currentSeat:', currentSeat, 'activePlayers:', gameState.activePlayers);
+                
                 if (currentSeat && gameState.activePlayers.includes(currentSeat)) {
+                    console.log('Calling showPlayerActions()');
                     showPlayerActions();
+                } else {
+                    console.warn('NOT showing player actions - seat not in active players');
                 }
             }, 500);
             
             setTimeout(() => {
+                console.log('Starting betting round after deal time:', dealTime);
                 startBettingRound();
             }, dealTime);
         }
         
         // Раздача карт игрокам
         function dealCardsToPlayers() {
+            console.log('=== dealCardsToPlayers called ===');
+            console.log('Active players:', gameState.activePlayers);
+            
             gameState.activePlayers.forEach((seatNum, index) => {
                 setTimeout(() => {
+                    console.log(`Dealing cards to seat ${seatNum}...`);
+                    
                     // Берем 2 карты из колоды
                     const card1 = gameState.deck.pop();
                     const card2 = gameState.deck.pop();
+                    
+                    console.log(`Cards for seat ${seatNum}:`, card1, card2);
                     
                     if (!gameState.players[seatNum]) {
                         gameState.players[seatNum] = {};
@@ -1138,13 +1168,14 @@
                     gameState.players[seatNum].bet = 0;
                     gameState.players[seatNum].folded = false;
                     
+                    console.log(`About to render cards for seat ${seatNum}, currentSeat=${currentSeat}`);
                     // Отрисовываем карты
                     renderPlayerCards(seatNum);
                     
                     // Синхронизация
                     if (useFirebase) {
                         database.ref(`rooms/${roomId}/game/players/${seatNum}`).set(gameState.players[seatNum]).then(() => {
-                            console.log(`Cards dealt to seat ${seatNum}`);
+                            console.log(`Cards dealt to seat ${seatNum} - synced to Firebase`);
                         });
                     }
                 }, index * 300);
@@ -1153,27 +1184,41 @@
         
         // Отрисовка карт игрока
         function renderPlayerCards(seatNum) {
+            console.log(`=== renderPlayerCards called for seat ${seatNum} ===`);
+            
             const seatElement = document.querySelector(`.seat-${seatNum}`);
-            if (!seatElement) return;
+            if (!seatElement) {
+                console.error(`Seat element not found for seat ${seatNum}`);
+                return;
+            }
             
             const playerCards = gameState.players[seatNum]?.cards || [];
             const isCurrentPlayer = parseInt(seatNum) === currentSeat;
             
-            console.log(`Rendering cards for seat ${seatNum}, isCurrentPlayer: ${isCurrentPlayer}, cards:`, playerCards);
+            console.log(`Seat ${seatNum}: isCurrentPlayer=${isCurrentPlayer}, currentSeat=${currentSeat}, cards:`, playerCards);
             
             if (isCurrentPlayer) {
+                console.log('This is current player - showing cards at bottom');
                 // Для текущего игрока показываем карты внизу в большем размере
                 const myHandContainer = document.getElementById('myHandContainer');
                 const myHandLabel = document.getElementById('myHandLabel');
                 
+                console.log('myHandContainer:', myHandContainer);
+                console.log('myHandLabel:', myHandLabel);
+                
                 if (myHandContainer && playerCards.length > 0) {
+                    console.log('Rendering cards in myHandContainer...');
                     myHandContainer.innerHTML = '';
                     playerCards.forEach(card => {
+                        console.log('Adding card to hand:', card);
                         const cardElement = renderCard(card, false);
                         myHandContainer.appendChild(cardElement);
                     });
                     myHandContainer.classList.add('active');
                     myHandLabel.classList.add('active');
+                    console.log('myHandContainer classes:', myHandContainer.className);
+                } else {
+                    console.warn('Cannot render hand - container missing or no cards');
                 }
                 
                 // На месте показываем рубашки карт
@@ -1189,6 +1234,7 @@
                     cardsContainer.appendChild(cardElement);
                 });
             } else {
+                console.log('This is other player - showing card backs');
                 // Для других игроков показываем рубашки
                 let cardsContainer = seatElement.querySelector('.player-cards');
                 if (!cardsContainer) {
@@ -1269,11 +1315,19 @@
         
         // Показать панель действий игрока
         function showPlayerActions() {
-            console.log('Showing player actions for seat:', currentSeat);
+            console.log('=== showPlayerActions called ===');
+            console.log('Current seat:', currentSeat);
             
             const actionsPanel = document.getElementById('playerActions');
+            console.log('Actions panel element:', actionsPanel);
+            
             if (actionsPanel) {
                 actionsPanel.classList.add('active');
+                console.log('Added "active" class to actions panel');
+                console.log('Panel classes:', actionsPanel.className);
+                console.log('Panel display:', window.getComputedStyle(actionsPanel).display);
+            } else {
+                console.error('Actions panel not found!');
             }
         }
         
@@ -1581,6 +1635,9 @@
         
         // Подключение кнопки Start Game
         document.getElementById('startGameBtn').addEventListener('click', () => {
+            console.log('Start Game button clicked!');
+            console.log('Current seat:', currentSeat);
+            
             // Проверяем, что игрок сидит за столом
             if (!currentSeat) {
                 alert('You need to take a seat first!');
@@ -1591,35 +1648,41 @@
             if (useFirebase) {
                 database.ref(`rooms/${roomId}/seats`).once('value', (snapshot) => {
                     const seats = snapshot.val() || {};
+                    console.log('Seats from Firebase:', seats);
+                    
                     gameState.players = {};
                     
                     Object.keys(seats).forEach(seatNum => {
                         gameState.players[seatNum] = {
-                            name: seats[seatNum].name,
-                            chips: seats[seatNum].chips,
+                            name: seats[seatNum].playerName || seats[seatNum].name || 'Player',
+                            chips: seats[seatNum].chips || 2000,
                             cards: [],
                             bet: 0,
                             folded: false
                         };
                     });
                     
+                    console.log('Game state players initialized:', gameState.players);
                     startPokerGame();
                 });
             } else {
                 const roomData = JSON.parse(localStorage.getItem(`room_${roomId}`) || '{}');
                 const seats = roomData.seats || {};
+                console.log('Seats from localStorage:', seats);
+                
                 gameState.players = {};
                 
                 Object.keys(seats).forEach(seatNum => {
                     gameState.players[seatNum] = {
-                        name: seats[seatNum].name,
-                        chips: seats[seatNum].chips,
+                        name: seats[seatNum].playerName || seats[seatNum].name || 'Player',
+                        chips: seats[seatNum].chips || 2000,
                         cards: [],
                         bet: 0,
                         folded: false
                     };
                 });
                 
+                console.log('Game state players initialized:', gameState.players);
                 startPokerGame();
             }
         });
